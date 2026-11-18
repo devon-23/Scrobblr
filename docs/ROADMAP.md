@@ -5,8 +5,8 @@ after it passes on a real device.
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | Architecture & project setup | 🟡 In progress |
-| 2 | Physical music library | ⬜ Not started |
+| 1 | Architecture & project setup | 🟡 Built — waiting on your device test |
+| 2 | Physical music library | 🟡 Built — waiting on your device test |
 | 3 | Listening session engine | ⬜ Not started |
 | 4 | Last.fm integration | ⬜ Not started |
 | 5 | NFC tags | ⬜ Not started |
@@ -27,8 +27,22 @@ after it passes on a real device.
 - [ ] Opened on iPhone 16, added to Home Screen, signed in
 
 ## Phase 2 — Physical music library
-Migrations + RLS · MusicBrainz search · Cover Art Archive artwork · albums ·
-physical copies (vinyl/CD) · editable tracklists · sides.
+
+- [x] Migration `supabase/migrations/20261118000000_library.sql`: albums, physical_copies,
+      tracks, copy_sides, copy_tracks, RLS, `save_physical_copy` / `delete_physical_copy`
+- [x] Migration verified on Postgres (PGlite): 24 checks incl. RLS isolation, transactional saves
+- [x] MusicBrainz client (rate-limited queue, retries on "server busy"); tested live from a browser
+- [x] Sides derived from sleeve numbering (A1/B2…, ONE 1/TWO 1…), with warnings when unknown
+- [x] Collection grid (search, vinyl/CD filter, sort), album page, add flow, copy/tracklist editor
+- [x] Early-2000s visual style
+- [ ] `supabase db push` applied to your project
+- [ ] Add Blurryface (or similar) on CD **and** vinyl → one album, two copies
+- [ ] Edit a tracklist (rename side, move/split/remove a track) and save
+- [ ] Delete a copy; delete the last copy → album disappears
+- [ ] Same checks on the iPhone Home Screen app
+
+Phase 3 reminder: `save_physical_copy` / `delete_physical_copy` delete tracks no copy uses;
+extend those checks so tracks with listening history are never deleted.
 
 ## Phase 3 — Listening session engine
 Event-log session model · duration-based progression · pause/resume · side
@@ -50,5 +64,5 @@ writing URLs with NFC Tools · real-tag testing.
 - **Domain written on tags** (needed before Phase 5): `*.pages.dev` subdomain or a custom domain.
 - **Behaviour defaults** (needed before Phase 3): phone-asleep policy, when to scrobble,
   multi-disc prompts, scanning another album mid-session, starting mid-album.
-- **MusicBrainz contact** for the User-Agent (needed before Phase 2).
-- **Visual direction** (needed before Phase 2 screens).
+- ~~MusicBrainz contact~~ — not needed: browsers can't set User-Agent and MusicBrainz accepts browser requests.
+- ~~Visual direction~~ — simple early-2000s profile-page look.

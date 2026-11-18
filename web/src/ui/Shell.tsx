@@ -1,0 +1,74 @@
+import type { ReactNode } from 'react'
+import { Link, useLocation } from '../lib/router'
+
+const NAV = [
+  { to: '/collection', label: 'collection' },
+  { to: '/add', label: 'add album' },
+  { to: '/settings', label: 'settings' },
+]
+
+export function Shell({ children }: { children: ReactNode }) {
+  const { path } = useLocation()
+  return (
+    <div className="site">
+      <header className="masthead">
+        <div>
+          <span className="name">
+            <Link to="/collection">AnalogScrobbler</Link>
+          </span>
+          <span className="tag">records &amp; cds, scrobbled</span>
+        </div>
+        <nav className="nav">
+          {NAV.map((n) => (
+            <Link key={n.to} to={n.to} aria-current={path.startsWith(n.to) ? 'page' : undefined}>
+              {n.label}
+            </Link>
+          ))}
+        </nav>
+      </header>
+      <main className="content">{children}</main>
+    </div>
+  )
+}
+
+export function Box({
+  title,
+  actions,
+  alt,
+  children,
+}: {
+  title: ReactNode
+  actions?: ReactNode
+  alt?: boolean
+  children: ReactNode
+}) {
+  return (
+    <section className={alt ? 'box alt' : 'box'}>
+      <div className="box-head">
+        <h2>{title}</h2>
+        {actions && <span>{actions}</span>}
+      </div>
+      <div className="box-body">{children}</div>
+    </section>
+  )
+}
+
+export function Loading({ what }: { what: string }) {
+  return <p className="muted">Loading {what}…</p>
+}
+
+export function ErrorBox({ error, onRetry }: { error: Error | string; onRetry?: () => void }) {
+  return (
+    <div className="errorbox" role="alert">
+      {typeof error === 'string' ? error : error.message}
+      {onRetry && (
+        <>
+          {' '}
+          <button className="linkish" onClick={onRetry}>
+            try again
+          </button>
+        </>
+      )}
+    </div>
+  )
+}

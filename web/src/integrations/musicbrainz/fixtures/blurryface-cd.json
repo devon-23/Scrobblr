@@ -1,0 +1,339 @@
+{
+ "id": "c7d35c12-4cfd-4842-bb27-ea777147cb35",
+ "title": "Blurryface",
+ "status": "Official",
+ "date": "2015-05-19",
+ "country": "US",
+ "barcode": "075678669224",
+ "disambiguation": "",
+ "cover-art-archive": {
+  "front": true
+ },
+ "artist-credit": [
+  {
+   "name": "twenty one pilots",
+   "joinphrase": "",
+   "artist": {
+    "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+    "name": "twenty one pilots"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "cf556b32-6f0c-4d32-9cbb-cc219a20566f",
+  "title": "Blurryface",
+  "first-release-date": "2015-05-15",
+  "primary-type": "Album"
+ },
+ "label-info": [
+  {
+   "catalog-number": "549636-2",
+   "label": {
+    "name": "Fueled by Ramen"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "title": "",
+   "tracks": [
+    {
+     "number": "1",
+     "position": 1,
+     "title": "Heavydirtysoul",
+     "length": 234813,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4c2c3614-265e-4726-8692-9ef98fff978b",
+      "title": "Heavydirtysoul",
+      "length": 234813
+     }
+    },
+    {
+     "number": "2",
+     "position": 2,
+     "title": "Stressed Out",
+     "length": 202333,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e2b9b868-5aa3-400a-aae2-7c7e9c7d35fd",
+      "title": "Stressed Out",
+      "length": 202333
+     }
+    },
+    {
+     "number": "3",
+     "position": 3,
+     "title": "Ride",
+     "length": 214506,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e034e9ef-6266-46f7-8fdd-46d3b26e1911",
+      "title": "Ride",
+      "length": 214505
+     }
+    },
+    {
+     "number": "4",
+     "position": 4,
+     "title": "Fairly Local",
+     "length": 207160,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6438fd3b-1735-404b-b845-319282e96e9d",
+      "title": "Fairly Local",
+      "length": 207160
+     }
+    },
+    {
+     "number": "5",
+     "position": 5,
+     "title": "Tear in My Heart",
+     "length": 188493,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "54beea24-76bd-4a79-830c-ade617e09244",
+      "title": "Tear in My Heart",
+      "length": 188493
+     }
+    },
+    {
+     "number": "6",
+     "position": 6,
+     "title": "Lane Boy",
+     "length": 253093,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "609865c3-cade-4336-bf83-ed7acb905e7a",
+      "title": "Lane Boy",
+      "length": 253088
+     }
+    },
+    {
+     "number": "7",
+     "position": 7,
+     "title": "The Judge",
+     "length": 297760,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "16c3c877-95da-4f69-878d-43304124194f",
+      "title": "The Judge",
+      "length": 297760
+     }
+    },
+    {
+     "number": "8",
+     "position": 8,
+     "title": "Doubt",
+     "length": 191493,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "873c8751-6ca7-4770-bdab-6d95d6a2ffce",
+      "title": "Doubt",
+      "length": 191493
+     }
+    },
+    {
+     "number": "9",
+     "position": 9,
+     "title": "Polarize",
+     "length": 226786,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b8d097f8-7743-4c5a-bf1c-1400f82011a5",
+      "title": "Polarize",
+      "length": 226786
+     }
+    },
+    {
+     "number": "10",
+     "position": 10,
+     "title": "We Don't Believe What's on TV",
+     "length": 177200,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1eb5a1f0-9d5b-4258-9d44-dace95ba3aca",
+      "title": "We Don’t Believe What’s on TV",
+      "length": 177200
+     }
+    },
+    {
+     "number": "11",
+     "position": 11,
+     "title": "Message Man",
+     "length": 240080,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ffbcb844-7e3d-45f6-b632-b3ce714370d0",
+      "title": "Message Man",
+      "length": 240071
+     }
+    },
+    {
+     "number": "12",
+     "position": 12,
+     "title": "Hometown",
+     "length": 234946,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1808ee9e-3384-4b1f-8fe3-e0c3b68774d9",
+      "title": "Hometown",
+      "length": 234948
+     }
+    },
+    {
+     "number": "13",
+     "position": 13,
+     "title": "Not Today",
+     "length": 238040,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4b451a74-6593-42db-ac68-8385c5447f71",
+      "title": "Not Today",
+      "length": 238040
+     }
+    },
+    {
+     "number": "14",
+     "position": 14,
+     "title": "Goner",
+     "length": 236733,
+     "artist-credit": [
+      {
+       "name": "twenty one pilots",
+       "joinphrase": "",
+       "artist": {
+        "id": "a6c6897a-7415-4f8d-b5a5-3a5e05f3be67",
+        "name": "twenty one pilots"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6b61004e-6bd4-4a83-b99d-8f193204fcf2",
+      "title": "Goner",
+      "length": 236733
+     }
+    }
+   ]
+  }
+ ]
+}
