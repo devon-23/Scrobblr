@@ -24,3 +24,5 @@ supabase/.branches/
 !.vscode/extensions.json
 .idea/
 *.log
+
+.claude/*
