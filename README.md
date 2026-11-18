@@ -35,13 +35,15 @@ npm run dev
 Open http://localhost:5173 and sign in. The setup screen should show
 **Server session check: ✓ Verified**.
 
-### 3. Supabase CLI (used for migrations from Phase 2)
+### 3. Supabase CLI + database tables
 ```bash
 brew install supabase/tap/supabase
 supabase login
 supabase link --project-ref <your-project-ref>
+supabase db push
 ```
-The project ref is the `xxxx` in `https://xxxx.supabase.co`.
+The project ref is the `xxxx` in `https://xxxx.supabase.co`. `db push` applies everything in
+`supabase/migrations/` that your project doesn't have yet; run it again whenever a phase adds one.
 
 ### 4. Deploy to Cloudflare Pages
 1. Push this repo to GitHub.
@@ -60,6 +62,11 @@ The project ref is the `xxxx` in `https://xxxx.supabase.co`.
 ### 5. On your iPhone
 Open the `pages.dev` URL in Safari → Share → **Add to Home Screen**. Launch it from
 the Home Screen and sign in; the setup screen should say **Running as: Home Screen app**.
+
+## Tests
+```bash
+cd web && npm test
+```
 
 ## Security notes
 - `.env.local` and all `.env.*` files are gitignored; only `*.example` files are committed.

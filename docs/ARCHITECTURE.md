@@ -35,11 +35,31 @@ universal links, so tags written now stay valid.
 
 | Folder | Responsibility |
 |---|---|
-| `lib/` | Infrastructure: config loading, Supabase client |
-| `auth/` | Sign-in state and screens |
+| `lib/` | Infrastructure: config, Supabase client + context, router, durations |
+| `auth/` | Sign-in state and screen |
+| `library/` | Library types and Supabase data access (`api.ts`) |
+| `integrations/musicbrainz/` | MusicBrainz client + pure mapping to drafts (tested with real fixtures) |
+| `features/` | Screens: collection, album, add, copy editor, settings |
+| `ui/` | Shared layout pieces (page frame, boxes, artwork) |
 | `engine/` *(Phase 3)* | Pure, UI-free session logic, unit-tested with a fake clock |
-| `integrations/` *(Phase 2+)* | MusicBrainz / Cover Art Archive clients |
-| `features/` *(Phase 2+)* | Screens: collection, listening, history, settings |
+
+## Library data model (Phase 2)
+
+```
+albums ─┬─< physical_copies ─< copy_sides ─< copy_tracks >─ tracks
+        └──────────────────────────────────────────────────────┘
+```
+- **albums** = the musical work (MusicBrainz release group). Unique per user + release group,
+  so the same album on CD and vinyl is one row.
+- **physical_copies** = a thing on the shelf (MusicBrainz release): format, edition, label, barcode.
+- **tracks** = songs of an album, shared across copies (matched by MusicBrainz recording),
+  so play counts merge across formats.
+- **copy_sides** = ordered sides ("A", "B" / "Disc 1"). The listening engine stops between sides.
+- **copy_tracks** = a track's position on a side of a copy, with an optional per-edition
+  duration override.
+- Composite foreign keys stop a copy_track pointing at another copy's side or another album's track.
+- Saving a copy goes through `save_physical_copy(jsonb)`, which replaces the tracklist in one
+  transaction (SECURITY INVOKER, so RLS still applies).
 
 Server-side secrets (Last.fm API secret, session key) live only in Supabase Edge
 Function secrets and a table the browser cannot read.
