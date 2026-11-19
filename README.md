@@ -64,13 +64,30 @@ The project ref is the `xxxx` in `https://xxxx.supabase.co`. `--remote` targets 
 Open the `pages.dev` URL in Safari → Share → **Add to Home Screen**. Launch it from
 the Home Screen and sign in; the setup screen should say **Running as: Home Screen app**.
 
+### 6. Last.fm (Phase 4)
+1. Create an API account at https://www.last.fm/api/account/create (any name/description; the
+   callback URL can be left blank). You get an **API key** and a **shared secret**. Never paste the
+   secret into the app, chat, or git.
+2. Put them in `supabase/functions/.env` (gitignored), copying `supabase/functions/.env.example`,
+   and set `ALLOWED_ORIGINS` to where the app runs (e.g. `http://localhost:5173,https://analogscrobbler.pages.dev`).
+3. Upload the secrets, apply the migration, deploy the function:
+   ```bash
+   supabase secrets set --env-file supabase/functions/.env
+   supabase db push --remote
+   supabase functions deploy lastfm
+   ```
+4. In the app: Settings → **Connect Last.fm** (in Safari on iPhone). **Dry run is on** by default —
+   nothing reaches your profile until you untick it.
+
 ## Tests
 ```bash
-cd web && npm test
+cd web && npm test                                       # app + engine
+cd supabase/functions && deno test --allow-net=jsr.io    # Last.fm signing + Edge Function
 ```
 
 ## Security notes
 - `.env.local` and all `.env.*` files are gitignored; only `*.example` files are committed.
 - `VITE_*` values are public by design. Data is protected by Supabase Row Level Security.
 - The app refuses to start if it detects a Supabase secret key in its config.
-- Last.fm secrets (Phase 4) will live only in Supabase Edge Function secrets.
+- The Last.fm API secret lives only in Supabase Edge Function secrets; the session key only in a
+  table the browser can't read. All signed Last.fm calls happen in the `lastfm` Edge Function.

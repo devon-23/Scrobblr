@@ -14,6 +14,7 @@ import { SettingsPage } from './features/settings/SettingsPage'
 import { ReadyPage } from './features/listening/ReadyPage'
 import { NowListeningPage } from './features/listening/NowListeningPage'
 import { ListeningProvider } from './listening/ListeningProvider'
+import { LastfmCallbackPage } from './features/settings/LastfmCallbackPage'
 
 export function App() {
   const result = loadConfig()
@@ -50,6 +51,7 @@ function Routes() {
   if (path === '/add') return <AddPage />
   if (path === '/settings') return <SettingsPage />
   if (path === '/listening') return <NowListeningPage />
+  if (path === '/lastfm/callback') return <LastfmCallbackPage />
   if ((params = match('/listen/:copyId', path))) return <ReadyPage key={params.copyId} copyId={params.copyId!} />
   if ((params = match('/album/:id', path))) return <AlbumPage key={params.id} id={params.id!} />
   if ((params = match('/copy/:id/edit', path))) return <EditCopyPage key={params.id} id={params.id!} />

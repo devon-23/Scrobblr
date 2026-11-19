@@ -8,7 +8,7 @@ after it passes on a real device.
 | 1 | Architecture & project setup | 🟡 Built — waiting on your device test |
 | 2 | Physical music library | 🟡 Built — waiting on your device test |
 | 3 | Listening session engine | 🟡 Built — waiting on your device test |
-| 4 | Last.fm integration | ⬜ Not started |
+| 4 | Last.fm integration | 🟡 Built — waiting on your Last.fm keys + test |
 | 5 | NFC tags | ⬜ Not started |
 | 6 | History, statistics, polish | ⬜ Not started |
 | 7 | Field testing & refinement | ⬜ Not started |
@@ -68,14 +68,38 @@ Decisions taken (defaults, change any time):
 
 Deferred, on purpose:
 - **Lock-screen "flip the record" alert.** Needs Web Push sent by the server at the right time
-  (VAPID keys + scheduled job). Built on Phase 4's Edge Functions/cron. Until then the prompt
+  (VAPID keys + scheduled job), on top of Phase 4's Edge Function. Until then the prompt
   shows when you open the app, or live if "keep screen on" is enabled.
 - **Gap between tracks.** Durations come from MusicBrainz; real vinyl adds a few seconds per
   track. Use Next / "wrong track?" for now; add a per-copy offset only if real use shows drift.
 
 ## Phase 4 — Last.fm
-Web auth flow via Edge Function · Now Playing · eligibility rules · dry-run mode ·
-local outbox + server queue · batching · retries · duplicate prevention.
+
+- [x] Migration `20261118300000_lastfm.sql`: lastfm_accounts (browser can't read keys),
+      user_settings (dry run ON by default), scrobbles queue (one per final counted play, unique),
+      atomic `claim_scrobbles`, final plays frozen, explicit service_role grants
+- [x] `lastfm` Edge Function: auth URL, connect (auth.getSession), disconnect, Now Playing,
+      batched flush (≤50), requeue; signs server-side; inspects response bodies, not just HTTP codes
+- [x] Retry rules: temporary errors/rate limits/daily limit → backoff; invalid session key → keep
+      queue, ask to reconnect; invalid request → split batch, mark only the bad item failed
+- [x] Settings: connect/disconnect, scrobbling on/off, dry run, scrobble log with retry
+- [x] Now Listening: per-track Last.fm status, Now Playing status
+- [x] Tests: 35 Deno (signing vs Python md5, fake Last.fm end to end), SQL checks for queue/RLS/claim
+- [ ] Register Last.fm API account; set secrets; `db push --remote`; `functions deploy lastfm`
+- [ ] Connect in Safari; confirm username shows
+- [ ] Dry run ON: listen to a few tracks → log shows "dry run (not sent)", Last.fm profile unchanged
+- [ ] Dry run OFF: one track → appears on your Last.fm profile with the right time
+- [ ] Airplane mode during a session → reconnect → queued scrobbles go out once (no duplicates)
+
+Known limits:
+- **Now Playing only while the app is open.** iOS suspends web pages; scrobbles still go out with the
+  right timestamps when you next open the app.
+- **Sending needs the app open** (it asks the function to flush after each upload, and on launch).
+  A server-side scheduled flush (pg_cron) can come later if wanted.
+- **At-least-once in one narrow case:** if Last.fm accepts a batch but the reply is lost, the batch is
+  retried after 10 minutes and could appear twice. Everything else is exactly-once.
+- **Last.fm reply formats** are implemented from Last.fm's documentation and tested against a fake;
+  the first real connection is the real test. Unexpected shapes are treated as "retry later".
 
 ## Phase 5 — NFC
 Tag tokens · `/t/<token>` route · unknown/unassigned tags · reassignment ·

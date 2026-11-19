@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSupabase } from '../../lib/supabaseContext'
 import { Box } from '../../ui/Shell'
+import { LastfmSettings } from './LastfmSettings'
 
 type ServerCheck = { status: 'checking' } | { status: 'ok'; at: Date } | { status: 'failed'; message: string }
 
@@ -49,9 +50,7 @@ export function SettingsPage() {
           <button onClick={() => void supabase.auth.signOut()}>Sign out</button>
         </p>
       </Box>
-      <Box title="Last.fm">
-        <p className="muted">Connecting Last.fm arrives in Phase 4.</p>
-      </Box>
+      <LastfmSettings />
     </>
   )
 }

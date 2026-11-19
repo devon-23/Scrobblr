@@ -3,6 +3,7 @@ import type { Play, Program, SessionState } from '../../engine/types'
 import { formatDuration } from '../../lib/duration'
 import { Link } from '../../lib/router'
 import { useListening, type SyncStatus } from '../../listening/ListeningProvider'
+import type { ScrobbleStatus } from '../../integrations/lastfm/api'
 import { Artwork } from '../../ui/Artwork'
 import { Box, ErrorBox, Loading } from '../../ui/Shell'
 
@@ -16,7 +17,19 @@ export function NowListeningPage() {
   const L = useListening()
   if (!L.loaded) return <Loading what="session" />
   if (!L.session || !L.state) {
-    if (L.lastEnded) return <EndedSummary program={L.lastEnded.program} state={L.lastEnded.state} unsynced={L.unsyncedCount} sync={L.sync} onRetry={L.retrySync} />
+    if (L.lastEnded) {
+      const id = L.lastEnded.sessionId
+      return (
+        <EndedSummary
+          program={L.lastEnded.program}
+          state={L.lastEnded.state}
+          unsynced={L.unsyncedCount}
+          sync={L.sync}
+          onRetry={L.retrySync}
+          statusOf={(seq) => L.scrobbleStatus(id, seq)}
+        />
+      )
+    }
     return (
       <Box title="Now Listening">
         <p>Nothing on right now. Pick a record in your <Link to="/collection">collection</Link> and press <b>listen</b>.</p>
@@ -103,10 +116,11 @@ export function NowListeningPage() {
       </Box>
 
       <Box title="Tracklist">
-        <SessionTracklist program={program} state={st} />
+        <SessionTracklist program={program} state={st} statusOf={(seq) => L.scrobbleStatus(L.session!.id, seq)} />
         <p className="small muted">
-          ✓ = counts as a Last.fm scrobble (track over 30 s, heard for half its length or 4 minutes). Sending scrobbles
-          to Last.fm arrives in Phase 4 — plays are saved now.
+          ✓ = counts (track over 30 s, heard for half its length or 4 minutes). It's queued for Last.fm once the
+          track ends and is saved: ✓ sent · ✓ dry = dry run, not sent · ✓… = queued. Details in{' '}
+          <Link to="/settings">settings</Link>.
         </p>
       </Box>
 
@@ -116,6 +130,18 @@ export function NowListeningPage() {
           <dd>{clock(L.session.events.find((e) => e.type === 'start')!.at)}</dd>
           <dt>Saved</dt>
           <dd><SyncLine sync={L.sync} onRetry={L.retrySync} /></dd>
+          <dt>Last.fm</dt>
+          <dd>
+            {!L.nowPlaying ? (
+              <span className="muted">—</span>
+            ) : (
+              <span className={L.nowPlaying.status === 'sent' ? 'good' : L.nowPlaying.status === 'failed' ? 'bad' : ''}>
+                now playing{' '}
+                {{ sent: 'sent', dry_run: 'not sent (dry run)', disabled: 'not sent (scrobbling off)', not_connected: 'not sent (not connected)', needs_reauth: 'not sent (reconnect Last.fm)', failed: "couldn't be sent" }[L.nowPlaying.status] ?? L.nowPlaying.status}{' '}
+                ({clock(L.nowPlaying.at)})
+              </span>
+            )}
+          </dd>
           <dt>Screen</dt>
           <dd>
             {L.wakeLock.supported ? (
@@ -278,16 +304,45 @@ function StaleCheck({ program, state }: { program: Program; state: SessionState 
   )
 }
 
-function playMark(p: Play | undefined, isCurrent: boolean): { mark: string; cls: string; title: string } {
+function countedMark(final: boolean, status: ScrobbleStatus | null): { mark: string; title: string } {
+  if (!final) return { mark: '✓?', title: 'counts once you confirm' }
+  switch (status) {
+    case 'accepted':
+      return { mark: '✓ sent', title: 'scrobbled to Last.fm' }
+    case 'dry_run':
+      return { mark: '✓ dry', title: 'dry run — logged, not sent' }
+    case 'pending':
+    case 'submitting':
+      return { mark: '✓…', title: 'queued for Last.fm' }
+    case 'ignored':
+      return { mark: '✓ ✗', title: 'ignored by Last.fm — see settings' }
+    case 'failed':
+      return { mark: '✓ !', title: 'failed to send — see settings' }
+    case 'disabled':
+      return { mark: '✓ off', title: 'not sent: scrobbling was off' }
+    default:
+      return { mark: '✓', title: 'counts (waiting to upload)' }
+  }
+}
+
+function playMark(p: Play | undefined, isCurrent: boolean, status: ScrobbleStatus | null): { mark: string; cls: string; title: string } {
   if (isCurrent) return { mark: '▶', cls: 'now-row', title: 'playing now' }
   if (!p) return { mark: '', cls: '', title: '' }
-  if (p.counts) return { mark: p.final ? '✓' : '✓?', cls: '', title: p.final ? 'counts' : 'counts once you confirm' }
+  if (p.counts) return { ...countedMark(p.final, status), cls: '' }
   if (p.endReason === 'skipped') return { mark: 'skip', cls: 'muted', title: 'skipped' }
   if (p.endReason === 'restarted') return { mark: '↺', cls: 'muted', title: 'restarted' }
   return { mark: '–', cls: 'muted', title: 'heard, but not enough to count' }
 }
 
-function SessionTracklist({ program, state }: { program: Program; state: SessionState }) {
+function SessionTracklist({
+  program,
+  state,
+  statusOf,
+}: {
+  program: Program
+  state: SessionState
+  statusOf: (seq: number) => ScrobbleStatus | null
+}) {
   const isVinyl = program.format === 'vinyl'
   return (
     <table className="list">
@@ -302,14 +357,15 @@ function SessionTracklist({ program, state }: { program: Program; state: Session
             const plays = state.plays.filter((p) => p.side === si && p.track === ti)
             const last = plays.at(-1)
             const isCurrent = !!state.current && state.current.side === si && state.current.track === ti
-            const m = playMark(last?.endedAt === null ? undefined : last, isCurrent)
+            const done = last?.endedAt === null ? undefined : last
+            const m = playMark(done, isCurrent, done ? statusOf(done.seq) : null)
             const counted = plays.filter((p) => p.counts).length
             return (
               <tr key={ti} className={m.cls}>
                 <td className="num">{t.displayNumber || ti + 1}</td>
                 <td>{isCurrent ? <b>{t.title}</b> : t.title}</td>
                 <td className="dur">{formatDuration(t.durationMs / 1000)}</td>
-                <td className="nowrap" title={m.title} style={{ width: '3em' }}>
+                <td className="nowrap small" title={m.title} style={{ width: '4.5em' }}>
                   {m.mark}
                   {counted > 1 && <span className="small"> ×{counted}</span>}
                 </td>
@@ -337,12 +393,14 @@ function EndedSummary({
   unsynced,
   sync,
   onRetry,
+  statusOf,
 }: {
   program: Program
   state: SessionState
   unsynced: number
   sync: SyncStatus
   onRetry: () => void
+  statusOf: (seq: number) => ScrobbleStatus | null
 }) {
   const counted = state.plays.filter((p) => p.counts)
   return (
@@ -360,7 +418,9 @@ function EndedSummary({
                 <tr key={p.seq}>
                   <td className="num">{clock(p.startedAt)}</td>
                   <td>{t.title}</td>
-                  <td className="nowrap">{p.counts ? '✓' : p.endReason === 'skipped' ? 'skip' : '–'}</td>
+                  <td className="nowrap small" title={p.counts ? countedMark(true, statusOf(p.seq)).title : ''}>
+                    {p.counts ? countedMark(true, statusOf(p.seq)).mark : p.endReason === 'skipped' ? 'skip' : '–'}
+                  </td>
                 </tr>
               )
             })}
@@ -370,7 +430,9 @@ function EndedSummary({
       {unsynced > 0 ? (
         <UploadNote count={unsynced} sync={sync} onRetry={onRetry} />
       ) : (
-        <p className="small muted">Saved. Sending these to Last.fm arrives in Phase 4.</p>
+        <p className="small muted">
+          Saved. Last.fm status per track is above; full log in <Link to="/settings">settings</Link>.
+        </p>
       )}
       <p>
         <Link to={`/album/${program.albumId}`}>back to album</Link> · <Link to="/collection">collection</Link>

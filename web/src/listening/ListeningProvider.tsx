@@ -13,6 +13,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { replay } from '../engine/engine'
 import type { Program, SessionEvent, SessionState } from '../engine/types'
 import { useSupabase } from '../lib/supabaseContext'
+import { flush as flushQueue, sendNowPlaying, sessionScrobbles, type ScrobbleStatus } from '../integrations/lastfm/api'
 import {
   fetchActive,
   fetchEvents,
@@ -54,7 +55,11 @@ interface ListeningCtx {
   discardLocal: () => void
   wakeLock: { supported: boolean; enabled: boolean; active: boolean; setEnabled: (on: boolean) => void }
   /** Summary of the session that just ended, for the "done" screen. */
-  lastEnded: { program: Program; state: SessionState } | null
+  lastEnded: { sessionId: string; program: Program; state: SessionState } | null
+  /** Last.fm queue status of a play, once the server has queued it. */
+  scrobbleStatus: (sessionId: string, seq: number) => ScrobbleStatus | null
+  /** Result of the most recent Now Playing update. */
+  nowPlaying: { status: string; at: number } | null
 }
 
 const Ctx = createContext<ListeningCtx | null>(null)
@@ -92,7 +97,7 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
       const cur = latest.current
       if (isEnded(s)) {
         const t = Date.now()
-        setLastEnded({ program: s.program, state: replay(s.program, s.events, t) })
+        setLastEnded({ sessionId: s.id, program: s.program, state: replay(s.program, s.events, t) })
         write({ v: 2, active: cur.active?.id === s.id ? null : cur.active, outbox: [...cur.outbox.filter((o) => o.id !== s.id), s] })
       } else {
         write({ ...cur, active: s })
@@ -111,6 +116,38 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
     }
   }, [session, now])
 
+  // --- Last.fm queue -------------------------------------------------------
+  // The server queues a scrobble the moment a play that counts is uploaded as
+  // final; flushing asks the lastfm function to send what's due (dry run
+  // respected). Then refresh statuses for the sessions on screen.
+  const [scrobbles, setScrobbles] = useState<Record<string, Record<number, ScrobbleStatus>>>({})
+  const [nowPlaying, setNowPlaying] = useState<ListeningCtx['nowPlaying']>(null)
+  const flushing = useRef(false)
+  const shownSessions = useRef<string[]>([])
+
+  const refreshStatuses = useCallback(async () => {
+    const ids = shownSessions.current
+    const next: Record<string, Record<number, ScrobbleStatus>> = {}
+    for (const id of ids) {
+      const rows = await sessionScrobbles(supabase, id)
+      next[id] = Object.fromEntries(rows.map((r) => [r.seq, r.status]))
+    }
+    setScrobbles(next)
+  }, [supabase])
+
+  const runFlush = useCallback(async () => {
+    if (flushing.current) return
+    flushing.current = true
+    try {
+      await flushQueue(supabase)
+    } catch {
+      // Not deployed / offline / Last.fm down: the queue keeps everything; Settings shows details.
+    } finally {
+      flushing.current = false
+    }
+    await refreshStatuses().catch(() => undefined)
+  }, [supabase, refreshStatuses])
+
   // --- syncing --------------------------------------------------------------
   const runSync = useCallback(async () => {
     if (syncing.current) return
@@ -118,10 +155,12 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
     if (pending.length === 0) return
     syncing.current = true
     setSyncStatus({ kind: 'syncing' })
+    let wrote = false
     try {
       for (const item of pending) {
         const t = Date.now()
         const updated = await sync(supabase, item, t)
+        if (updated !== item) wrote = true
         // Apply only the sync bookkeeping; keep any events appended meanwhile.
         const cur = latest.current
         const patch = (s: LocalSession) =>
@@ -130,6 +169,7 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
         write({ v: 2, active: cur.active ? patch(cur.active) : null, outbox })
       }
       setSyncStatus({ kind: 'synced', at: Date.now() })
+      if (wrote) void runFlush()
     } catch (e) {
       if (e instanceof SessionConflictError) setSyncStatus({ kind: 'conflict', message: e.message })
       else if (e instanceof SyncError && e.offline) setSyncStatus({ kind: 'offline', message: e.message })
@@ -137,7 +177,7 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
     } finally {
       syncing.current = false
     }
-  }, [supabase, write])
+  }, [supabase, write, runFlush])
 
   /** Adds events the server has (from another tab/device) to the local active session. */
   const pullRemote = useCallback(async () => {
@@ -179,12 +219,15 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
         window.clearTimeout(giveUp)
         if (!cancelled) setLoaded(true)
       }
-      if (!cancelled) void runSync()
+      if (!cancelled) {
+        void runSync()
+        void runFlush() // anything left from earlier visits
+      }
     })()
     return () => {
       cancelled = true
     }
-  }, [supabase, commit, pullRemote, runSync])
+  }, [supabase, commit, pullRemote, runSync, runFlush])
 
   // --- clock + background sync ---------------------------------------------
   const phase = state?.phase
@@ -277,6 +320,39 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
     setSyncStatus({ kind: 'idle' })
   }, [write])
 
+  // Which sessions' scrobble statuses to show: the active one and the one just ended.
+  const activeId = store.active?.id
+  const endedId = lastEnded?.sessionId
+  useEffect(() => {
+    shownSessions.current = [activeId, endedId].filter((x): x is string => !!x)
+    void refreshStatuses().catch(() => undefined)
+  }, [activeId, endedId, refreshStatuses])
+
+  // --- Now Playing --------------------------------------------------------------
+  // Sent whenever a different track starts playing (auto-advance, next, wrong-track
+  // fix, resume). Only while the app is open — see docs/ROADMAP.md (Phase 4).
+  const npKey =
+    state && state.phase === 'playing' && state.current && !state.needsConfirmation && session
+      ? `${session.id}:${state.current.seq}:${state.current.side}:${state.current.track}:${session.events.length}`
+      : null
+  const lastNp = useRef<string | null>(null)
+  useEffect(() => {
+    if (!npKey || npKey === lastNp.current || !session || !state?.current) return
+    lastNp.current = npKey
+    const t = session.program.sides[state.current.side]!.tracks[state.current.track]!
+    sendNowPlaying(supabase, {
+      artist: t.artist,
+      track: t.title,
+      album: session.program.albumTitle,
+      albumArtist: session.program.albumArtist,
+      duration: Math.round(t.durationMs / 1000),
+      trackNumber: state.current.track + 1,
+    }).then(
+      (r) => setNowPlaying({ status: r.status, at: Date.now() }),
+      () => setNowPlaying({ status: 'failed', at: Date.now() }),
+    )
+  }, [npKey, session, state, supabase])
+
   // --- wake lock ---------------------------------------------------------------
   const supported = typeof navigator !== 'undefined' && 'wakeLock' in navigator
   const [wakeEnabled, setWakeEnabledState] = useState(() => localStorage.getItem(WAKE_PREF) === '1')
@@ -328,6 +404,8 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
     discardLocal,
     wakeLock: { supported, enabled: wakeEnabled, active: wakeActive, setEnabled: setWakeEnabled },
     lastEnded,
+    scrobbleStatus: (sessionId, seq) => scrobbles[sessionId]?.[seq] ?? null,
+    nowPlaying,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

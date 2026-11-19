@@ -79,6 +79,20 @@ albums ─┬─< physical_copies ─< copy_sides ─< copy_tracks >─ tracks
 - `session_plays.counts` = meets Last.fm's rule; `final` = can no longer change. Phase 4 will only
   scrobble plays that are both.
 
+## Last.fm (Phase 4)
+
+```
+play uploaded as final + counts ──trigger──► scrobbles (pending)
+app: after each upload / on launch ──► lastfm function "flush"
+  claim_scrobbles (atomic) → dry run? mark dry_run : signed track.scrobble (≤50)
+  → per item: accepted | ignored (reason) | pending+backoff | failed
+```
+- `supabase/functions/_shared/lastfm.ts`: signing, batching, response parsing, error classes (pure).
+- `supabase/functions/lastfm/handler.ts`: actions; takes its store/fetch as parameters for tests.
+- `supabase/functions/lastfm/index.ts`: wires Supabase (service role) and validates the caller's JWT.
+- The browser reads `user_settings`, `scrobbles` and `lastfm_connection()`; it can't write the
+  queue or read the session key.
+
 Server-side secrets (Last.fm API secret, session key) live only in Supabase Edge
 Function secrets and a table the browser cannot read.
 
