@@ -39,9 +39,10 @@ universal links, so tags written now stay valid.
 | `auth/` | Sign-in state and screen |
 | `library/` | Library types and Supabase data access (`api.ts`) |
 | `integrations/musicbrainz/` | MusicBrainz client + pure mapping to drafts (tested with real fixtures) |
-| `features/` | Screens: collection, album, add, copy editor, settings |
+| `features/` | Screens: collection, album, add, copy editor, listening, settings |
 | `ui/` | Shared layout pieces (page frame, boxes, artwork) |
-| `engine/` *(Phase 3)* | Pure, UI-free session logic, unit-tested with a fake clock |
+| `engine/` | Pure, UI-free session logic, unit-tested with a fake clock |
+| `listening/` | Session storage, sync, and the React provider (clock, wake lock) |
 
 ## Library data model (Phase 2)
 
@@ -60,6 +61,23 @@ albums ─┬─< physical_copies ─< copy_sides ─< copy_tracks >─ tracks
 - Composite foreign keys stop a copy_track pointing at another copy's side or another album's track.
 - Saving a copy goes through `save_physical_copy(jsonb)`, which replaces the tracklist in one
   transaction (SECURITY INVOKER, so RLS still applies).
+
+## Listening sessions (Phase 3)
+
+- A session is an **append-only event log** (`start`, `pause`, `next`, `startSide`, `end`…), each
+  event with a browser-generated id and UTC timestamp. `web/src/engine/engine.ts` replays the log
+  against a frozen tracklist ("program") at a given time and derives the plays. No timers count
+  anything; reopening the app just replays with the new time.
+- Progress between events is an **estimate from durations** — the app can't hear the record. The
+  engine takes the same events a future audio detector could emit.
+- **Local first:** events go to `localStorage` before the network. A finished session waits in a
+  local outbox until the server has everything. Uploads are idempotent (events by id, plays by
+  `(session, seq)`), so retries can't duplicate.
+- **One active session per user** is enforced by a partial unique index.
+- **Stale returns:** if a side ran out with nobody checking in for 15+ minutes, its plays stay
+  provisional (`final = false`) until the user confirms or picks where they stopped.
+- `session_plays.counts` = meets Last.fm's rule; `final` = can no longer change. Phase 4 will only
+  scrobble plays that are both.
 
 Server-side secrets (Last.fm API secret, session key) live only in Supabase Edge
 Function secrets and a table the browser cannot read.

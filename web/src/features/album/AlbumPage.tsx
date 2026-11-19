@@ -141,6 +141,10 @@ function CopyBox({
       title={`${copy.format === 'vinyl' ? 'Vinyl' : 'CD'}${copy.edition_name ? ` · ${copy.edition_name}` : ''}`}
       actions={
         <>
+          <Link to={`/listen/${copy.id}`}>
+            <b>▶ listen</b>
+          </Link>
+          {' | '}
           <Link to={`/copy/${copy.id}/edit`}>edit</Link>
           {' | '}
           <a href="#" onClick={(e) => (e.preventDefault(), !busy && void remove())}>

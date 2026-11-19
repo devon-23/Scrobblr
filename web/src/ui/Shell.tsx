@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from '../lib/router'
+import { useListening } from '../listening/ListeningProvider'
 
 const NAV = [
   { to: '/collection', label: 'collection' },
@@ -9,6 +10,7 @@ const NAV = [
 
 export function Shell({ children }: { children: ReactNode }) {
   const { path } = useLocation()
+  const { session } = useListening()
   return (
     <div className="site">
       <header className="masthead">
@@ -19,6 +21,11 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className="tag">records &amp; cds, scrobbled</span>
         </div>
         <nav className="nav">
+          {session && (
+            <Link to="/listening" className="live" aria-current={path === '/listening' ? 'page' : undefined}>
+              ♪ now playing
+            </Link>
+          )}
           {NAV.map((n) => (
             <Link key={n.to} to={n.to} aria-current={path.startsWith(n.to) ? 'page' : undefined}>
               {n.label}

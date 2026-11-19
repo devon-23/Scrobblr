@@ -21,8 +21,11 @@ function fail(error: PostgrestError, action: string): never {
   }
   if (error.code === 'PGRST205' || error.code === '42P01' || error.code === 'PGRST202') {
     throw new LibraryError(
-      `The library tables aren't in your Supabase database yet. Run "supabase db push" from the repo, then reload. (${error.message})`,
+      `The library tables aren't in your Supabase database yet. Run "supabase db push --remote" from the repo, then reload. (${error.message})`,
     )
+  }
+  if (error.code === '42501') {
+    throw new LibraryError(`${action}: the database refused access (${error.message}). Apply the latest migrations with "supabase db push --remote", then reload.`)
   }
   if (error.code === '23514') throw new LibraryError(`${action}: a value is out of range or blank (${error.message}).`)
   if (error.code === '23505') throw new LibraryError(`${action}: that would create a duplicate (${error.message}).`)

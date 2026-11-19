@@ -11,6 +11,9 @@ import { AlbumPage } from './features/album/AlbumPage'
 import { AddPage } from './features/add/AddPage'
 import { EditCopyPage } from './features/copy/EditCopyPage'
 import { SettingsPage } from './features/settings/SettingsPage'
+import { ReadyPage } from './features/listening/ReadyPage'
+import { NowListeningPage } from './features/listening/NowListeningPage'
+import { ListeningProvider } from './listening/ListeningProvider'
 
 export function App() {
   const result = loadConfig()
@@ -26,9 +29,11 @@ function AuthedApp({ config }: { config: AppConfig }) {
   if (state.status === 'signedOut') return <SignIn supabase={supabase} />
   return (
     <SupabaseProvider value={{ supabase, session: state.session, config }}>
-      <Shell>
-        <Routes />
-      </Shell>
+      <ListeningProvider>
+        <Shell>
+          <Routes />
+        </Shell>
+      </ListeningProvider>
     </SupabaseProvider>
   )
 }
@@ -44,6 +49,8 @@ function Routes() {
   if (path === '/' || path === '/collection') return <CollectionPage />
   if (path === '/add') return <AddPage />
   if (path === '/settings') return <SettingsPage />
+  if (path === '/listening') return <NowListeningPage />
+  if ((params = match('/listen/:copyId', path))) return <ReadyPage key={params.copyId} copyId={params.copyId!} />
   if ((params = match('/album/:id', path))) return <AlbumPage key={params.id} id={params.id!} />
   if ((params = match('/copy/:id/edit', path))) return <EditCopyPage key={params.id} id={params.id!} />
   return (

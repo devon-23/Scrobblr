@@ -40,9 +40,10 @@ Open http://localhost:5173 and sign in. The setup screen should show
 brew install supabase/tap/supabase
 supabase login
 supabase link --project-ref <your-project-ref>
-supabase db push
+supabase db push --remote
 ```
-The project ref is the `xxxx` in `https://xxxx.supabase.co`. `db push` applies everything in
+The project ref is the `xxxx` in `https://xxxx.supabase.co`. `--remote` targets your linked project
+(newer CLI versions default to a local Docker stack, which this project doesn't use). It applies everything in
 `supabase/migrations/` that your project doesn't have yet; run it again whenever a phase adds one.
 
 ### 4. Deploy to Cloudflare Pages
