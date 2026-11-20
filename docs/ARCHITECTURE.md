@@ -135,7 +135,9 @@ public collection (api.discogs.com, 25/min) → rows (vinyl/CD only)
   → MusicBrainz url lookup: discogs.com/release/<id> → MB release (25 per request)
   → else Discogs release → MB barcode search (one hit with the same format)
   → else Discogs tracklist → draft (complete → ready, else needs a look)
-ready → save_physical_copy (album matched by release group, else title+artist) → discogs_imports
+  → missing lengths: MB release search (same format + track count first), copy lengths by title
+ready → claim discogs_imports row → existing copy (same Discogs/MB release)? link it
+      : save_physical_copy (album matched by release group, else title+artist) → link
 ```
 - `integrations/discogs/`: client (queue, errors), pure mapping (tested on real releases).
 - `features/import/useDiscogsImport.ts`: orchestration; progress in localStorage, imported and

@@ -200,6 +200,9 @@ export function validate(m: EditModel): Problem[] {
   if (m.copy.barcode && !/^[0-9A-Za-z -]{1,40}$/.test(m.copy.barcode)) {
     problems.push({ message: 'Barcode can only contain letters, digits, spaces and dashes.' })
   }
+  if (m.copy.release_country && m.copy.release_country.trim().length > 10) {
+    problems.push({ message: 'Country must be a short code (10 characters at most), e.g. US, GB, DE.' })
+  }
   if (m.sides.length === 0) problems.push({ message: 'Add at least one side.' })
 
   const labels = new Set<string>()

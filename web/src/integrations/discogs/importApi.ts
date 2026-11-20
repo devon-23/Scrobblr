@@ -27,11 +27,46 @@ export async function forgetImport(supabase: SupabaseClient, instanceId: number)
   if (error) fail(error, 'Updating import progress')
 }
 
-/** MusicBrainz release ids of copies already in the collection (to spot ones added by hand earlier). */
-export async function ownedMusicBrainzReleases(supabase: SupabaseClient): Promise<Map<string, string>> {
-  const { data, error } = await supabase.from('physical_copies').select('id, musicbrainz_release_id').not('musicbrainz_release_id', 'is', null)
+export interface OwnedCopies {
+  /** Discogs release id → copy ids (from the "From Discogs: …/release/<id>" note). */
+  byDiscogs: Map<number, string[]>
+  /** MusicBrainz release id → copy ids. */
+  byMb: Map<string, string[]>
+}
+
+/** Copies already in the collection that came from (or match) a Discogs/MusicBrainz release. */
+export async function ownedCopies(supabase: SupabaseClient): Promise<OwnedCopies> {
+  const { data, error } = await supabase.from('physical_copies').select('id, musicbrainz_release_id, notes')
   if (error) fail(error, 'Loading your collection')
-  return new Map((data as { id: string; musicbrainz_release_id: string }[]).map((r) => [r.musicbrainz_release_id, r.id]))
+  const byDiscogs = new Map<number, string[]>()
+  const byMb = new Map<string, string[]>()
+  const add = <K>(m: Map<K, string[]>, k: K, v: string) => m.set(k, [...(m.get(k) ?? []), v])
+  for (const c of data as { id: string; musicbrainz_release_id: string | null; notes: string | null }[]) {
+    if (c.musicbrainz_release_id) add(byMb, c.musicbrainz_release_id, c.id)
+    const rel = /discogs\.com\/release\/(\d+)/.exec(c.notes ?? '')?.[1]
+    if (rel) add(byDiscogs, Number(rel), c.id)
+  }
+  return { byDiscogs, byMb }
+}
+
+/**
+ * Claims a collection item before saving it, so two tabs/devices (or a
+ * double tap) can never import it twice: the database allows one row per item.
+ * Returns false if it was already claimed.
+ */
+export async function claimImport(supabase: SupabaseClient, instanceId: number, releaseId: number): Promise<boolean> {
+  const { error } = await supabase
+    .from('discogs_imports')
+    .insert({ instance_id: instanceId, release_id: releaseId, physical_copy_id: null, status: 'imported' })
+  if (!error) return true
+  if (error.code === '23505') return false
+  fail(error, 'Saving import progress')
+}
+
+/** Points a claimed item at the copy that was saved (or that already existed). */
+export async function linkImport(supabase: SupabaseClient, instanceId: number, copyId: string): Promise<void> {
+  const { error } = await supabase.from('discogs_imports').update({ physical_copy_id: copyId, status: 'imported' }).eq('instance_id', instanceId)
+  if (error) fail(error, 'Saving import progress')
 }
 
 /** An album with exactly this title and artist (any case), for drafts without a MusicBrainz id. */

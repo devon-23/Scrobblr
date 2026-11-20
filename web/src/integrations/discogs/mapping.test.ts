@@ -7,6 +7,9 @@ import {
   discogsFormat,
   discogsToDraft,
   draftIsComplete,
+  countryCode,
+  cleanBarcode,
+  fitDraft,
   formatLine,
   parseDiscogsDuration,
   toImportRow,
@@ -132,6 +135,42 @@ describe('drafts', () => {
   })
   it('2×LP edition name', () => {
     expect(discogsToDraft(R(persuader), 'vinyl').copy.edition_name).toBe('2×LP')
+  })
+})
+
+describe('fitting the database limits', () => {
+  it('turns Discogs country names into short codes (the column allows 10 characters)', () => {
+    expect(countryCode('United Kingdom')).toBe('GB')
+    expect(countryCode('UK & Europe')).toBe('XE')
+    expect(countryCode('US')).toBe('US')
+    expect(countryCode('Germany')).toBe('DE')
+    expect(countryCode('Unknown')).toBeNull()
+    expect(countryCode('Chile')).toBe('CL')
+    expect(countryCode('Bosnia & Herzegovina')).toBeNull() // unknown and too long: dropped, never an error
+    expect(countryCode('Atlantis')).toBe('Atlantis') // unknown but fits: kept
+  })
+  it('keeps only barcode characters the database accepts', () => {
+    expect(cleanBarcode('0 7464-63628-2 2')).toBe('0 7464-63628-2 2')
+    expect(cleanBarcode('5012394144777 >')).toBe('5012394144777')
+    expect(cleanBarcode('(01) 1234/5678')).toBe('01 12345678')
+    expect(cleanBarcode('*')).toBeNull()
+    expect(cleanBarcode('1'.repeat(41))).toBeNull()
+  })
+  it('fits a messy draft to every column limit', () => {
+    const d = fitDraft({
+      copy_id: null,
+      album: { title: '  ', artist: '', release_year: 0, artwork_url: 'http://insecure' },
+      copy: { format: 'vinyl', release_country: 'United Kingdom', release_year: 1066, label: 'x'.repeat(300), barcode: '??', notes: 'n'.repeat(3000) },
+      sides: [{ label: 'A', tracks: [{ title: '', artist: '', duration_seconds: 0 }] }],
+    })
+    expect(d.album).toMatchObject({ title: '(untitled)', artist: 'Unknown Artist', release_year: null, artwork_url: null })
+    expect(d.copy).toMatchObject({ release_country: 'GB', release_year: null, barcode: null })
+    expect(d.copy.label).toHaveLength(200)
+    expect(d.copy.notes).toHaveLength(2000)
+    expect(d.sides[0]!.tracks[0]).toMatchObject({ title: '(untitled)', artist: 'Unknown Artist', duration_seconds: null })
+  })
+  it('a Discogs draft never carries a long country name', () => {
+    expect(discogsToDraft(R({ ...rick, country: 'United Kingdom' }), 'vinyl').copy.release_country).toBe('GB')
   })
 })
 

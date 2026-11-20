@@ -157,6 +157,13 @@ Known limits:
       editor, enter by hand (pre-filled), search MusicBrainz, skip / un-skip, import another copy
 - [x] Tests: 20 mapping tests on real Discogs releases (incl. one full of nulls), 9 SQL checks,
       browser run against live Discogs + MusicBrainz (4 of 5 matched exactly)
+- [x] Fix (2026-11-20): Discogs country names ("United Kingdom") broke saving; drafts are now fitted
+      to every column limit (country → short code, barcode, years, lengths)
+- [x] Missing track lengths are looked up on other MusicBrainz editions (matched by title; position
+      only when track counts match) before anything is sent to "needs a look"
+- [x] Duplicate-proof: each item is claimed in `discogs_imports` before saving (double taps, two
+      tabs/devices); copies already in the collection (same Discogs or MusicBrainz release) are
+      linked instead of saved again
 - [ ] `supabase db push --remote`, push, make your Discogs collection public, import
 
 ## Phase 7 — Field testing

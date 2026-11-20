@@ -1,5 +1,4 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { saveCopy } from '../../library/api'
 import type { CopyDraft } from '../../library/types'
 import { Link } from '../../lib/router'
 import { useSupabase } from '../../lib/supabaseContext'
@@ -97,8 +96,7 @@ export function ImportPage() {
           initial={editing.model}
           saveLabel="Save to collection"
           onSave={async (m) => {
-            const copyId = await saveCopy(supabase, toDraft(m))
-            await imp.finishImport(editing.row, copyId)
+            await imp.saveReviewed(editing.row, toDraft(m))
             setEditing(null)
           }}
           onCancel={() => setEditing(null)}
@@ -120,14 +118,15 @@ export function ImportPage() {
         </form>
         <p className="small muted">
           Reads your <b>public</b> Discogs collection: no password or token. Vinyl and CDs are matched to MusicBrainz (exact edition,
-          sides and track lengths) or else Discogs' own tracklist. Anything incomplete waits here for you to check or enter by hand.
+          sides and track lengths) or else Discogs' own tracklist; missing lengths are looked up on other MusicBrainz editions of
+          the same album. Anything still incomplete waits here for you. Running it again never adds a record twice.
         </p>
         {imp.error && <ErrorBox error={imp.error} />}
         {rowError && <ErrorBox error={rowError} />}
         {busy && (
           <div className="notice">
             {busy.kind === 'loading' && `Loading your collection… ${busy.total ? `${busy.done} of ${busy.total}` : ''}`}
-            {busy.kind === 'matching' && `Matching tracklists… ${busy.done} of ${busy.total}`}
+            {busy.kind === 'matching' && `Matching tracklists and track lengths… ${busy.done} of ${busy.total}`}
             {busy.kind === 'importing' && `Importing… ${busy.done} of ${busy.total}`}
             {busy.total > 0 && (
               <div className="progress" style={{ marginTop: 4 }}>
@@ -142,9 +141,11 @@ export function ImportPage() {
             </p>
           </div>
         )}
-        {!busy && counts.pending > 0 && (
+        {!busy && imp.toCheck > 0 && (
           <p>
-            <button onClick={() => void imp.continueMatching()}>Continue matching ({counts.pending} left)</button>
+            <button onClick={() => void imp.continueMatching()}>
+              {counts.pending > 0 ? `Continue matching (${imp.toCheck} left)` : `Look up missing track lengths on MusicBrainz (${imp.toCheck})`}
+            </button>
           </p>
         )}
         {imp.rows.length > 0 && (

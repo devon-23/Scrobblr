@@ -46,6 +46,81 @@ export function formatLine(formats: DgFormat[] | undefined): string {
     .join(' + ')
 }
 
+// Discogs country names → the short codes MusicBrainz uses (the database allows ≤ 10 characters).
+const COUNTRY: Record<string, string> = {
+  us: 'US', usa: 'US', 'united states': 'US', uk: 'GB', 'united kingdom': 'GB', england: 'GB', scotland: 'GB', wales: 'GB',
+  europe: 'XE', 'uk & europe': 'XE', 'germany & europe': 'XE', worldwide: 'XW', 'usa & canada': 'US', 'usa & europe': 'XW',
+  'uk & us': 'XW', 'uk, europe & us': 'XW', canada: 'CA', germany: 'DE', france: 'FR', japan: 'JP', netherlands: 'NL',
+  italy: 'IT', spain: 'ES', australia: 'AU', 'australia & new zealand': 'AU', 'new zealand': 'NZ', sweden: 'SE',
+  belgium: 'BE', brazil: 'BR', mexico: 'MX', russia: 'RU', poland: 'PL', norway: 'NO', denmark: 'DK', finland: 'FI',
+  austria: 'AT', switzerland: 'CH', greece: 'GR', portugal: 'PT', argentina: 'AR', ireland: 'IE', 'south africa': 'ZA',
+  'south korea': 'KR', korea: 'KR', taiwan: 'TW', 'hong kong': 'HK', china: 'CN', india: 'IN', israel: 'IL', turkey: 'TR',
+  'czech republic': 'CZ', czechia: 'CZ', czechoslovakia: 'XC', hungary: 'HU', ussr: 'SU', yugoslavia: 'YU',
+  'german democratic republic (gdr)': 'DD', 'east germany': 'DD', colombia: 'CO', chile: 'CL', venezuela: 'VE', peru: 'PE',
+  philippines: 'PH', indonesia: 'ID', malaysia: 'MY', singapore: 'SG', thailand: 'TH', ukraine: 'UA', romania: 'RO',
+  bulgaria: 'BG', croatia: 'HR', serbia: 'RS', slovenia: 'SI', slovakia: 'SK', lithuania: 'LT', latvia: 'LV', estonia: 'EE',
+  iceland: 'IS', luxembourg: 'LU', scandinavia: 'XE', benelux: 'XE', 'uk & ireland': 'GB',
+}
+
+/** "United Kingdom" → "GB", "UK & Europe" → "XE"; unknown names that fit are kept, else dropped. */
+export function countryCode(name: string | null | undefined): string | null {
+  const n = (name ?? '').trim()
+  if (!n || /^unknown$/i.test(n)) return null
+  const code = COUNTRY[n.toLowerCase()]
+  if (code) return code
+  return n.length <= 10 ? n : null
+}
+
+/** Only what the barcode column accepts (letters, digits, spaces, dashes; ≤ 40), else null. */
+export function cleanBarcode(value: string | null | undefined): string | null {
+  const v = (value ?? '').replace(/[^0-9A-Za-z -]/g, '').replace(/\s+/g, ' ').trim()
+  return v && v.length <= 40 ? v : null
+}
+
+/** A year the database accepts (1880–2100), else null. */
+export const cleanYear = (y: number | null | undefined) => (y && y >= 1880 && y <= 2100 ? y : null)
+const cut = (s: string | null | undefined, n: number) => (s ? s.slice(0, n) : null)
+const https = (u: string | null | undefined) => (u && u.startsWith('https://') ? u : null)
+
+/**
+ * Makes a draft fit every column limit, so an automatic save can't fail on
+ * Discogs' free-form data (long country names, odd barcodes, year 0 …).
+ */
+export function fitDraft(d: CopyDraft): CopyDraft {
+  const albumArtist = (d.album.artist || '').trim() || 'Unknown Artist'
+  return {
+    ...d,
+    album: {
+      ...d.album,
+      title: ((d.album.title || '').trim() || '(untitled)').slice(0, 500),
+      artist: albumArtist.slice(0, 500),
+      release_year: cleanYear(d.album.release_year),
+      artwork_url: https(d.album.artwork_url),
+    },
+    copy: {
+      ...d.copy,
+      edition_name: cut(d.copy.edition_name, 200),
+      label: cut(d.copy.label, 200),
+      catalog_number: cut(d.copy.catalog_number, 100),
+      barcode: cleanBarcode(d.copy.barcode),
+      release_country: countryCode(d.copy.release_country),
+      release_year: cleanYear(d.copy.release_year),
+      artwork_url: https(d.copy.artwork_url),
+      notes: cut(d.copy.notes, 2000),
+    },
+    sides: d.sides.map((side) => ({
+      ...side,
+      label: side.label.slice(0, 20),
+      tracks: side.tracks.map((t) => ({
+        ...t,
+        title: ((t.title || '').trim() || '(untitled)').slice(0, 500),
+        artist: ((t.artist || '').trim() || albumArtist).slice(0, 500),
+        duration_seconds: t.duration_seconds && t.duration_seconds > 0 && t.duration_seconds < 86400 ? t.duration_seconds : null,
+      })),
+    })),
+  }
+}
+
 /** "3:32" → 212, "1:02:03" → 3723, "" / junk → null. */
 export function parseDiscogsDuration(text: string | undefined): number | null {
   const m = /^\s*(?:(\d+):)?(\d{1,3}):(\d{2})\s*$/.exec(text ?? '')
@@ -124,7 +199,7 @@ export function buildDiscogsSides(release: DgRelease, format: MediaFormat): { si
 export function discogsToDraft(release: DgRelease, format: MediaFormat, coverUrl?: string | null): CopyDraft {
   const { sides, warnings } = buildDiscogsSides(release, format)
   const label = release.labels?.[0]
-  const barcode = release.identifiers?.find((i) => i.type === 'Barcode')?.value?.replace(/\s/g, '') || null
+  const barcode = cleanBarcode(release.identifiers?.find((i) => i.type === 'Barcode')?.value?.replace(/\s/g, ''))
   const fmt = release.formats?.find((f) => discogsFormat([f]) === format)
   const qty = Number(fmt?.qty || '1')
   const edition = [qty > 1 ? `${qty}×${format === 'vinyl' ? 'LP' : 'CD'}` : null, fmt?.text].filter(Boolean).join(', ') || null
@@ -134,7 +209,7 @@ export function discogsToDraft(release: DgRelease, format: MediaFormat, coverUrl
       title: release.title ?? '',
       artist: artistText(release.artists),
       album_artist: null,
-      release_year: release.year || null,
+      release_year: cleanYear(release.year),
       artwork_url: coverUrl || null,
       musicbrainz_release_group_id: null,
       musicbrainz_artist_id: null,
@@ -145,8 +220,8 @@ export function discogsToDraft(release: DgRelease, format: MediaFormat, coverUrl
       label: label?.name ? cleanName(label.name) : null,
       catalog_number: label?.catno && label.catno !== 'none' ? label.catno : null,
       barcode,
-      release_country: release.country ?? null,
-      release_year: release.year || null,
+      release_country: countryCode(release.country),
+      release_year: cleanYear(release.year),
       artwork_url: coverUrl || null,
       musicbrainz_release_id: null,
       notes: `From Discogs: https://www.discogs.com/release/${release.id}`,

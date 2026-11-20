@@ -150,3 +150,12 @@ export async function searchReleasesByBarcode(barcode: string): Promise<MbReleas
   const data = await getJson<{ releases: MbRelease[] }>('/release', { query: `barcode:${digits}`, limit: '10' })
   return data.releases ?? []
 }
+
+/** Releases (any edition) matching an album title and artist, with media formats and track counts. */
+export async function searchReleases(title: string, artist: string): Promise<MbRelease[]> {
+  if (!title.trim()) return []
+  const parts = [`release:(${escapeLucene(title.trim())})`]
+  if (artist.trim()) parts.push(`artist:(${escapeLucene(artist.trim())})`)
+  const data = await getJson<{ releases: MbRelease[] }>('/release', { query: parts.join(' AND '), limit: '25' })
+  return data.releases ?? []
+}
