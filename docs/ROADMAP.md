@@ -106,15 +106,17 @@ Tags hold `https://scrobblr.cbark1313.workers.dev/t/<token>` (NTAG213/215, left 
 
 - [x] Migration `20261119000000_nfc_tags.sql`: `nfc_tags` (random token → copy, owner-only RLS,
       owner-aware FK, deleting a copy unlinks its tags), `scan_nfc_tag()` looks up + counts a tap
-- [x] `/t/<token>`: linked tag → that copy's Start Listening screen (never auto-starts), or Now
-      Listening if that record is already on; unknown/unlinked tag → "which record is it on?" picker
+- [x] `/t/<token>`: linked tag → starts listening right away (side 1, track 1, timed from the tap;
+      changed 2026-11-20 at your request, was a Start screen), ending any other record's session;
+      same record → Now Listening; unknown/unlinked tag → "which record is it on?" picker → Start screen;
+      `?test=1` (tag page "test link") checks a tag without starting anything
 - [x] Album page: "tag" link + tag summary per copy; tag page: make link, Copy, try it, unlink,
       NFC Tools instructions, warning when making links from localhost
 - [x] Tests: 25 SQL checks (isolation, upsert takeover refused, unlinking on delete), token tests,
       browser run of every flow against a fake backend
 - [ ] `supabase db push --remote` (new migration), push to deploy
 - [ ] Safari on iPhone: sign in once (tags open in Safari, not the Home Screen app)
-- [ ] One copy → tag → Make a tag link → Copy → NFC Tools write → tap → Start Listening opens
+- [ ] One copy → tag → Make a tag link → Copy → NFC Tools write → tap → it starts playing
 - [ ] Tap it again while that record is playing → Now Listening
 - [ ] A sticker written with a link for a copy you then unlink → tap → picker → link to another copy
 - [ ] Find a sticker spot per format (jacket / inner sleeve / CD tray) that reads first time
@@ -138,6 +140,8 @@ Known limits:
       End session; start time shows the date when it wasn't today
 - [x] Tests: 21 SQL checks (formats, case-merged songs, time zones, period, isolation), helper
       tests, query run read-only against the real database, browser run of every page
+- [x] Auto-end (2026-11-20): nothing playing (paused / side or album finished) for 40 min → session
+      ends itself, back-dated to that moment, also when the app was closed (applied on next open)
 - [ ] `supabase db push --remote` (new migration), push to deploy
 - [ ] Home / History / Stats show your real plays; numbers match what you listened to
 - [ ] History vinyl/CD filter and search on the phone

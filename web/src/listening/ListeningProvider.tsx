@@ -8,6 +8,8 @@
  *   Supabase (immediately, on reconnect, on return to the app, every 30 s).
  *   Ended sessions wait in a local outbox until the server has all of them.
  * - Wake lock: optionally keeps the screen on so the page stays live.
+ * - Auto-end: a session with nothing playing for AUTO_END_AFTER_MS ends itself,
+ *   recorded as an 'end' event back-dated to that moment (also on next launch).
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { replay } from '../engine/engine'
@@ -28,6 +30,8 @@ import {
   type LocalStore,
 } from './store'
 
+export type EndHow = 'manual' | 'auto' | 'replaced'
+
 type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never
 export type Action = DistributiveOmit<SessionEvent, 'id' | 'at'> & { at?: number }
 
@@ -47,15 +51,21 @@ interface ListeningCtx {
   sync: SyncStatus
   /** Ended sessions on this device that haven't fully reached the server yet. */
   unsyncedCount: number
-  /** Starts a new session. Fails if one is already active. */
-  start: (program: Program, side: number, track: number) => Promise<void>
+  /**
+   * Starts a new session. Fails if one is already active, unless
+   * replaceActive: then the active one (here or on another device) ends at
+   * the same moment — used when a different record's tag is tapped.
+   */
+  start: (program: Program, side: number, track: number, opts?: { replaceActive?: boolean; at?: number }) => Promise<void>
   act: (action: Action) => void
   retrySync: () => void
   /** Drops this device's active session (used when another device's session wins a conflict). */
   discardLocal: () => void
   wakeLock: { supported: boolean; enabled: boolean; active: boolean; setEnabled: (on: boolean) => void }
   /** Summary of the session that just ended, for the "done" screen. */
-  lastEnded: { sessionId: string; program: Program; state: SessionState } | null
+  lastEnded: { sessionId: string; program: Program; state: SessionState; how: EndHow } | null
+  /** Set when starting this session ended another one (tag tap on a different record). */
+  replaced: { albumTitle: string; counted: number } | null
   /** Last.fm queue status of a play, once the server has queued it. */
   scrobbleStatus: (sessionId: string, seq: number) => ScrobbleStatus | null
   /** Result of the most recent Now Playing update. */
@@ -81,7 +91,11 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
   const [now, setNow] = useState(() => Date.now())
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ kind: 'idle' })
   const [lastEnded, setLastEnded] = useState<ListeningCtx['lastEnded']>(null)
+  const [replaced, setReplaced] = useState<ListeningCtx['replaced']>(null)
+  /** True once the first load has merged what the server knows (so auto-end doesn't act on stale events). */
+  const [reconciled, setReconciled] = useState(false)
   const syncing = useRef(false)
+  const syncAgain = useRef(false)
   const latest = useRef(store)
   latest.current = store
 
@@ -93,11 +107,11 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
 
   /** Stores a new version of the active session; an ended one moves to the outbox. */
   const commit = useCallback(
-    (s: LocalSession) => {
+    (s: LocalSession, how: EndHow = 'manual') => {
       const cur = latest.current
       if (isEnded(s)) {
         const t = Date.now()
-        setLastEnded({ sessionId: s.id, program: s.program, state: replay(s.program, s.events, t) })
+        setLastEnded({ sessionId: s.id, program: s.program, state: replay(s.program, s.events, t), how })
         write({ v: 2, active: cur.active?.id === s.id ? null : cur.active, outbox: [...cur.outbox.filter((o) => o.id !== s.id), s] })
       } else {
         write({ ...cur, active: s })
@@ -150,25 +164,33 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
 
   // --- syncing --------------------------------------------------------------
   const runSync = useCallback(async () => {
-    if (syncing.current) return
-    const pending = [...latest.current.outbox, ...(latest.current.active ? [latest.current.active] : [])]
-    if (pending.length === 0) return
+    // A request while a sync is running (e.g. the session auto-ended mid-upload)
+    // isn't dropped: the running sync goes round again when it finishes.
+    if (syncing.current) {
+      syncAgain.current = true
+      return
+    }
     syncing.current = true
-    setSyncStatus({ kind: 'syncing' })
     let wrote = false
     try {
-      for (const item of pending) {
-        const t = Date.now()
-        const updated = await sync(supabase, item, t)
-        if (updated !== item) wrote = true
-        // Apply only the sync bookkeeping; keep any events appended meanwhile.
-        const cur = latest.current
-        const patch = (s: LocalSession) =>
-          s.id === updated.id ? { ...s, syncedEventIds: updated.syncedEventIds, syncedFingerprint: updated.syncedFingerprint } : s
-        const outbox = cur.outbox.map(patch).filter((s) => !fullySynced(s, t))
-        write({ v: 2, active: cur.active ? patch(cur.active) : null, outbox })
-      }
-      setSyncStatus({ kind: 'synced', at: Date.now() })
+      do {
+        syncAgain.current = false
+        const pending = [...latest.current.outbox, ...(latest.current.active ? [latest.current.active] : [])]
+        if (pending.length === 0) break
+        setSyncStatus({ kind: 'syncing' })
+        for (const item of pending) {
+          const t = Date.now()
+          const updated = await sync(supabase, item, t)
+          if (updated !== item) wrote = true
+          // Apply only the sync bookkeeping; keep any events appended meanwhile.
+          const cur = latest.current
+          const patch = (s: LocalSession) =>
+            s.id === updated.id ? { ...s, syncedEventIds: updated.syncedEventIds, syncedFingerprint: updated.syncedFingerprint } : s
+          const outbox = cur.outbox.map(patch).filter((s) => !fullySynced(s, t))
+          write({ v: 2, active: cur.active ? patch(cur.active) : null, outbox })
+        }
+        setSyncStatus({ kind: 'synced', at: Date.now() })
+      } while (syncAgain.current)
       if (wrote) void runFlush()
     } catch (e) {
       if (e instanceof SessionConflictError) setSyncStatus({ kind: 'conflict', message: e.message })
@@ -217,7 +239,10 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
         else if (!cancelled) setSyncStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) })
       } finally {
         window.clearTimeout(giveUp)
-        if (!cancelled) setLoaded(true)
+        if (!cancelled) {
+          setLoaded(true)
+          setReconciled(true)
+        }
       }
       if (!cancelled) {
         void runSync()
@@ -265,13 +290,47 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
     }
   }, [pullRemote, runSync])
 
+  /**
+   * Ends a session (local or fetched from the server) at `at` — or earlier, at
+   * its auto-end time, if it had already been idle that long. Moves it to the
+   * outbox, which syncs before any new active session.
+   */
+  const endNow = useCallback(
+    (s: LocalSession, at: number): { albumTitle: string; counted: number } => {
+      const st = replay(s.program, s.events, at)
+      const idle = st.autoEndAt !== null && st.autoEndAt <= at
+      const endAt = idle ? st.autoEndAt! : Math.max(at, st.lastEventAt)
+      const next = { ...s, events: [...s.events, { id: crypto.randomUUID(), type: 'end', at: endAt } as SessionEvent] }
+      commit(next, idle ? 'auto' : 'replaced')
+      const counted = replay(next.program, next.events, at).plays.filter((p) => p.counts).length
+      return { albumTitle: s.program.albumTitle, counted }
+    },
+    [commit],
+  )
+
+  // --- auto-end after inactivity ------------------------------------------------
+  const autoEndAt = state?.autoEndAt ?? null
+  useEffect(() => {
+    if (!reconciled || autoEndAt === null || now < autoEndAt) return
+    const cur = latest.current.active
+    if (!cur) return
+    endNow(cur, now)
+    setNow(Date.now())
+    void runSync()
+  }, [reconciled, autoEndAt, now, endNow, runSync])
+
   // --- actions ---------------------------------------------------------------
   const start = useCallback(
-    async (program: Program, side: number, track: number) => {
+    async (program: Program, side: number, track: number, opts: { replaceActive?: boolean; at?: number } = {}) => {
       // The moment the button was pressed is when the music started — take it
       // before any network wait, or a slow connection would shift every track.
-      const at = Date.now()
-      if (latest.current.active) throw new Error('A session is already active. End it first.')
+      const at = opts.at ?? Date.now()
+      let ended: ListeningCtx['replaced'] = null
+      const local = latest.current.active
+      if (local) {
+        if (!opts.replaceActive) throw new Error('A session is already active. End it first.')
+        ended = endNow(local, at)
+      }
       // Check the server too, so a session started elsewhere isn't duplicated.
       // If offline or slow (>4 s), carry on: the database's one-active-session
       // rule still applies when this session syncs.
@@ -281,13 +340,17 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
           new Promise<'timeout'>((r) => setTimeout(() => r('timeout'), 4000)),
         ])
         if (remote && remote !== 'timeout' && !latest.current.outbox.some((o) => o.id === remote.id)) {
-          commit(remote)
-          throw new SessionConflictError()
+          if (!opts.replaceActive) {
+            commit(remote)
+            throw new SessionConflictError()
+          }
+          ended = endNow(remote, at) // started on another device (e.g. the Home Screen app)
         }
       } catch (e) {
         if (!(e instanceof SyncError && e.offline)) throw e
       }
       setLastEnded(null)
+      setReplaced(ended)
       commit({
         v: 1,
         id: crypto.randomUUID(),
@@ -299,7 +362,7 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
       setNow(Date.now())
       void runSync()
     },
-    [supabase, commit, runSync],
+    [supabase, commit, runSync, endNow],
   )
 
   const act = useCallback(
@@ -404,6 +467,7 @@ export function ListeningProvider({ children }: { children: ReactNode }) {
     discardLocal,
     wakeLock: { supported, enabled: wakeEnabled, active: wakeActive, setEnabled: setWakeEnabled },
     lastEnded,
+    replaced,
     scrobbleStatus: (sessionId, seq) => scrobbles[sessionId]?.[seq] ?? null,
     nowPlaying,
   }

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { buildProgram } from '../../engine/program'
+import { getCopy } from '../../library/api'
 import { linkToken, listCopyChoices, scanTag, type CopyChoice } from '../../nfc/api'
 import { isValidToken } from '../../nfc/tokens'
-import { Link, navigate } from '../../lib/router'
+import { Link, navigate, useLocation } from '../../lib/router'
 import { useSupabase } from '../../lib/supabaseContext'
 import { useAsync } from '../../lib/useAsync'
 import { useListening } from '../../listening/ListeningProvider'
@@ -15,12 +17,14 @@ type Scan =
   | { status: 'error'; error: string }
 
 /**
- * What a sticker opens: /t/<token>. A linked tag goes to that copy's
- * "Start Listening" screen (nothing starts until you press it), or straight
- * to Now Listening if that record is already on. An unknown or unlinked tag
- * asks which record it's on.
+ * What a sticker opens: /t/<token>. A linked tag starts listening to that copy
+ * right away (side 1, track 1, timed from the moment the page opened), ending
+ * whatever else was on. If that record is already on, it just shows it. An
+ * unknown or unlinked tag asks which record it's on.
  */
 export function TagPage({ token }: { token: string }) {
+  // ?test=1 (the tag page's "test link"): show what the tag opens without starting anything.
+  const testOnly = useLocation().query.get('test') === '1'
   const { supabase } = useSupabase()
   const listening = useListening()
   const [scan, setScan] = useState<Scan>({ status: 'scanning' })
@@ -39,11 +43,26 @@ export function TagPage({ token }: { token: string }) {
     )
   }, [supabase, token, valid, attempt])
 
-  const activeCopyId = listening.session?.program.copyId
+  // The tap is when the record went on: remember it before any network wait.
+  const tappedAt = useRef(Date.now())
+  const started = useRef(false)
+  const [startError, setStartError] = useState<string | null>(null)
+  const { loaded, session, start } = listening
   useEffect(() => {
-    if (scan.status !== 'linked' || !listening.loaded) return
-    navigate(activeCopyId === scan.copyId ? '/listening' : `/listen/${scan.copyId}`, { replace: true })
-  }, [scan, listening.loaded, activeCopyId])
+    if (scan.status !== 'linked' || !loaded || started.current || testOnly) return
+    started.current = true
+    const copyId = scan.copyId
+    if (session?.program.copyId === copyId) return navigate('/listening', { replace: true })
+    ;(async () => {
+      const copy = await getCopy(supabase, copyId)
+      if (!copy) throw new Error("This tag's record isn't in your collection any more.")
+      const built = buildProgram(copy.album, copy)
+      // Missing durations etc.: the Start screen explains what to fix.
+      if (!built.ok) return navigate(`/listen/${copyId}`, { replace: true })
+      await start(built.program, 0, 0, { replaceActive: true, at: tappedAt.current })
+      navigate('/listening', { replace: true })
+    })().catch((e: unknown) => setStartError(e instanceof Error ? e.message : String(e)))
+  }, [scan, loaded, session, start, supabase, testOnly])
 
   if (!valid) {
     return (
@@ -57,7 +76,19 @@ export function TagPage({ token }: { token: string }) {
       </Box>
     )
   }
-  if (scan.status === 'scanning' || scan.status === 'linked') return <Loading what="tag" />
+  if (startError && scan.status === 'linked') {
+    return (
+      <Box title="Couldn't start">
+        <ErrorBox error={startError} />
+        <p>
+          <Link to={`/listen/${scan.copyId}`}>Open this record's Start screen instead</Link>
+        </p>
+      </Box>
+    )
+  }
+  if (scan.status === 'scanning') return <Loading what="tag" />
+  if (scan.status === 'linked' && testOnly) return <TagWorks copyId={scan.copyId} />
+  if (scan.status === 'linked') return <p className="muted">Starting…</p>
   if (scan.status === 'error') return <ErrorBox error={scan.error} onRetry={() => setAttempt((n) => n + 1)} />
   return <LinkTag token={token} known={scan.known} />
 }
@@ -150,6 +181,25 @@ function LinkTag({ token, known }: { token: string; known: boolean }) {
       )}
       <p className="small muted">
         Tag <code>{token}</code>
+      </p>
+    </Box>
+  )
+}
+
+/** Result of "test link": proves the tag resolves, without starting a session. */
+function TagWorks({ copyId }: { copyId: string }) {
+  const { supabase } = useSupabase()
+  const copy = useAsync(() => getCopy(supabase, copyId), [supabase, copyId])
+  if (copy.status === 'loading') return <Loading what="record" />
+  if (copy.status === 'error') return <ErrorBox error={copy.error} onRetry={copy.reload} />
+  return (
+    <Box title="Tag works">
+      <p className="good">
+        This tag opens {copy.data ? `${copy.data.album.title} (${copy.data.format === 'cd' ? 'CD' : 'vinyl'})` : 'a record that is no longer in your collection'}.
+      </p>
+      <p className="small">Tapping the sticker itself starts listening right away. Nothing was started now.</p>
+      <p>
+        <Link to={`/copy/${copyId}/tags`}>Back to the tag page</Link>
       </p>
     </Box>
   )

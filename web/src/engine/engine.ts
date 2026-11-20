@@ -13,6 +13,13 @@ export function meetsScrobbleRule(durationMs: number, listenedMs: number): boole
 /** After a side runs out on its own, wait this long before asking "did you really hear that?". */
 export const STALE_AFTER_MS = 15 * 60_000
 
+/**
+ * A session with nothing playing (paused, or a side/album finished) for this
+ * long ends itself, back-dated to that moment. A playing side never counts as
+ * inactive: a CD can run 70+ minutes without a tap.
+ */
+export const AUTO_END_AFTER_MS = 40 * 60_000
+
 const NEVER_COUNTS: EndReason[] = ['skipped', 'restarted']
 
 export class EngineError extends Error {}
@@ -240,9 +247,17 @@ export function replay(program: Program, events: SessionEvent[], now: number): S
     }
   }
 
+  // Nothing playing since the later of the last tap and the side running out.
+  let autoEndAt: number | null = null
+  if (phase === 'paused') autoEndAt = lastEventAt + AUTO_END_AFTER_MS
+  else if (phase === 'side_done' || phase === 'album_done') {
+    autoEndAt = Math.max(lastEventAt, m.sideFinishedAt ?? lastEventAt) + AUTO_END_AFTER_MS
+  }
+
   return {
     phase,
     plays: m.plays,
+    autoEndAt,
     current,
     sideEndsAt,
     sideFinishedAt: m.sideFinishedAt,

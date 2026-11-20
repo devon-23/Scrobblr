@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EngineError, meetsScrobbleRule, replay, STALE_AFTER_MS } from './engine'
+import { AUTO_END_AFTER_MS, EngineError, meetsScrobbleRule, replay, STALE_AFTER_MS } from './engine'
 import type { Program, SessionEvent } from './types'
 
 const s = (sec: number) => sec * 1000
@@ -237,6 +237,57 @@ describe('coming back after the app was closed', () => {
   it('a back-dated end in the middle of a track records a partial play', () => {
     const st = replay(LP, [start(), ev(min(5), { type: 'end' })], T0 + min(60))
     expect(st.plays[1]).toMatchObject({ endReason: 'ended', listenedMs: min(2), counts: true })
+  })
+})
+
+describe('ending itself after 40 minutes with nothing playing', () => {
+  const sideEnd = min(7, 20)
+
+  it('a playing session never auto-ends (a long CD plays untouched)', () => {
+    const st = replay(LP, [start()], T0 + min(1))
+    expect(st.phase).toBe('playing')
+    expect(st.autoEndAt).toBeNull()
+  })
+
+  it('paused: ends 40 min after the pause, and the paused time is not counted', () => {
+    const pausedAt = min(2)
+    const events = [start(), ev(pausedAt, { type: 'pause' })]
+    const before = replay(LP, events, T0 + min(30))
+    expect(before.autoEndAt).toBe(T0 + pausedAt + AUTO_END_AFTER_MS)
+    // The app records the end at exactly autoEndAt:
+    const st = replay(LP, [...events, ev(pausedAt + AUTO_END_AFTER_MS, { type: 'end' })], T0 + min(300))
+    expect(st.phase).toBe('ended')
+    expect(st.autoEndAt).toBeNull()
+    expect(st.plays).toHaveLength(1)
+    expect(st.plays[0]).toMatchObject({ listenedMs: min(2), endReason: 'ended', counts: true, final: true })
+  })
+
+  it('resuming before the deadline cancels it', () => {
+    const st = replay(LP, [start(), ev(min(1), { type: 'pause' }), ev(min(35), { type: 'resume' })], T0 + min(36))
+    expect(st.phase).toBe('playing')
+    expect(st.autoEndAt).toBeNull()
+  })
+
+  it('side finished on its own: ends 40 min after the side ran out, counting the side', () => {
+    const before = replay(LP, [start()], T0 + sideEnd + min(20))
+    expect(before.phase).toBe('side_done')
+    expect(before.needsConfirmation).toBe(true) // still asks if you look within the 40 min
+    expect(before.autoEndAt).toBe(T0 + sideEnd + AUTO_END_AFTER_MS)
+    const st = replay(LP, [start(), ev(sideEnd + AUTO_END_AFTER_MS, { type: 'end' })], T0 + min(600))
+    expect(st.phase).toBe('ended')
+    expect(titles(st.plays)).toEqual(['A1', 'A2', 'A3'])
+    expect(st.plays.map((p) => [p.counts, p.final])).toEqual([[true, true], [true, true], [false, true]]) // A3 is 20 s
+  })
+
+  it('a tap after the side ended pushes the deadline back', () => {
+    const st = replay(LP, [start(), ev(min(10), { type: 'confirm' })], T0 + min(11))
+    expect(st.autoEndAt).toBe(T0 + min(10) + AUTO_END_AFTER_MS)
+  })
+
+  it('album finished: same rule', () => {
+    const st = replay(LP, [start(), ev(min(8), { type: 'startSide', side: 1 })], T0 + min(30))
+    expect(st.phase).toBe('album_done')
+    expect(st.autoEndAt).toBe(T0 + min(8) + min(8, 30) + AUTO_END_AFTER_MS)
   })
 })
 

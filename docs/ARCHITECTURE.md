@@ -78,6 +78,11 @@ albums ─┬─< physical_copies ─< copy_sides ─< copy_tracks >─ tracks
 - **One active session per user** is enforced by a partial unique index.
 - **Stale returns:** if a side ran out with nobody checking in for 15+ minutes, its plays stay
   provisional (`final = false`) until the user confirms or picks where they stopped.
+- **Auto-end:** with nothing playing (paused, side/album finished) for `AUTO_END_AFTER_MS` (40 min),
+  `replay()` reports `autoEndAt`; the provider records an `end` event at exactly that time (on the
+  next tick, or on next launch if the app was closed). Plays up to the end of the side count.
+- **Replacing:** `start(…, { replaceActive })` ends the current session (this device's or one
+  fetched from the server) at the same instant; the outbox syncs it before the new session.
 - `session_plays.counts` = meets Last.fm's rule; `final` = can no longer change. Phase 4 will only
   scrobble plays that are both.
 
@@ -103,8 +108,9 @@ Function secrets and a table the browser cannot read.
 ```
 sticker: https://<app>/t/<token>  ──iPhone background read──► Safari
 /t/<token> ─► scan_nfc_tag(token)  (RLS: owner only; counts the tap)
-   linked   → /listen/<copyId>  (or /listening if that copy is already playing)
-   unknown/unlinked → pick a copy → upsert nfc_tags on token → /listen/<copyId>
+   linked   → start(side 1, track 1, at = page open, replaceActive) → /listening
+              (same copy already playing → just /listening; ?test=1 → only says what it opens)
+   unknown/unlinked → pick a copy → upsert nfc_tags on token → /listen/<copyId> (Start screen)
 ```
 - The token is 22 random base64url characters (128 bits) and carries no meaning; the
   `nfc_tags` row maps it to a copy, so tags can be moved or replaced without rewriting stickers.

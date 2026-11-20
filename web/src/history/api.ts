@@ -97,14 +97,16 @@ export async function recentAlbums(supabase: SupabaseClient, limit = 8): Promise
   const { data, error } = await supabase
     .from('listening_sessions')
     .select(
-      'id, format, status, started_at, album_id, physical_copy_id, albumTitle:program->>albumTitle, albumArtist:program->>albumArtist, artworkUrls:program->artworkUrls',
+      'id, format, status, started_at, album_id, physical_copy_id, albumTitle:program->>albumTitle, albumArtist:program->>albumArtist, artworkUrls:program->artworkUrls, session_plays!inner ( seq )',
     )
+    // Only sessions where something actually counted (not a tag tapped by mistake).
+    .eq('session_plays.counts', true)
     .order('started_at', { ascending: false })
     .limit(limit * 4)
   if (error) fail(error, 'Loading recent listening')
   const seen = new Set<string>()
   const out: RecentSession[] = []
-  for (const s of data as RecentSession[]) {
+  for (const { session_plays: _plays, ...s } of data as (RecentSession & { session_plays: unknown })[]) {
     const key = `${s.album_id ?? s.albumTitle}|${s.format}`
     if (seen.has(key)) continue
     seen.add(key)

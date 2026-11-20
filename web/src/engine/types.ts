@@ -104,6 +104,12 @@ export interface SessionState {
   nextSide: number | null
   lastEventAt: number
   /**
+   * When the session will end itself for inactivity (AUTO_END_AFTER_MS with
+   * nothing playing), or null while a track is playing / after it ended. Once
+   * `now` reaches it, the app records an 'end' event at exactly this time.
+   */
+  autoEndAt: number | null
+  /**
    * True when a side ran out on its own more than STALE_AFTER_MS ago with
    * nobody confirming it — e.g. the app was closed for hours. Plays after the
    * last user action stay provisional until the user confirms or ends early.

@@ -1,7 +1,8 @@
 # AnalogScrobbler
 
-Scrobble vinyl records and CDs to Last.fm. Tap an NFC sticker on the sleeve, press
-**Start Listening**, and the app follows the tracklist and scrobbles for you.
+Scrobble vinyl records and CDs to Last.fm. Tap an NFC sticker on the sleeve and the app
+starts following the tracklist and scrobbling for you (or pick a record in the app and press
+**Start Listening**). A session with nothing playing for 40 minutes ends itself.
 
 A personal web app: **Cloudflare Workers** (static front end) + **Supabase** (database, auth,
 server functions). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
@@ -90,7 +91,8 @@ the Home Screen and sign in; the setup screen should say **Running as: Home Scre
 3. In the app on your phone: an album → **tag** next to a copy → **Make a tag link** → **Copy**.
 4. NFC Tools → Write → Add a record → URL / URI → paste → Write → hold the phone to the sticker.
    Don't lock the tag while testing.
-5. Tap the sticker with the phone's top edge: Safari opens that record's Start Listening screen.
+5. Tap the sticker with the phone's top edge: Safari opens and the record starts playing in the app.
+   Use **test link** on the tag page to check a tag without starting a session.
 
 ### 8. History and stats (Phase 6)
 `supabase db push --remote` (adds `listening_stats()`), then push to deploy. Home, History and

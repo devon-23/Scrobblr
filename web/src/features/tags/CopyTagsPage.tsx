@@ -153,7 +153,7 @@ function TagItem({
           ? `Last tapped ${new Date(tag.last_scanned_at).toLocaleString()} · ${tag.scan_count} tap${tag.scan_count === 1 ? '' : 's'}`
           : 'Not tapped yet'}
         {' · '}
-        <Link to={`/t/${tag.token}`}>try it</Link>
+        <Link to={`/t/${tag.token}?test=1`}>test link</Link>
         {' · '}
         <button className="linkish" onClick={() => void remove()} disabled={removing}>
           {removing ? 'unlinking…' : 'unlink'}
@@ -179,7 +179,8 @@ function HowTo() {
         </li>
         <li>
           Close NFC Tools (iOS pauses tag reading while an app or the camera is using NFC). With the screen on, hold the top of
-          the phone to the sticker. A banner appears; tap it and this record's Start Listening screen opens.
+          the phone to the sticker. A banner appears; tap it and the record starts playing in the app (side 1, track 1; use "wrong track?" if you
+          put on another side).
         </li>
       </ol>
       <p className="small">

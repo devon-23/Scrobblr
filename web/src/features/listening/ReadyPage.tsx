@@ -11,9 +11,9 @@ import { Artwork } from '../../ui/Artwork'
 import { Box, ErrorBox, Loading } from '../../ui/Shell'
 
 /**
- * The screen you land on when you pick (or, in Phase 5, scan) a record.
- * Nothing is timed until "Start Listening" — scanning before the needle drops
- * must not count as listening.
+ * The screen you land on when you pick a record in the app (a tag tap starts
+ * straight away instead, see TagPage). Nothing is timed until "Start
+ * Listening".
  */
 export function ReadyPage({ copyId }: { copyId: string }) {
   const { supabase } = useSupabase()
