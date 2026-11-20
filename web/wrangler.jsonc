@@ -1,0 +1,15 @@
+// Cloudflare Workers deploy config (static assets only, no server code).
+// Cloudflare builds with `npm run build` (root directory: web), then
+// `npx wrangler deploy` uploads dist/ using this file.
+{
+  // Must match the Worker's name in the Cloudflare dashboard.
+  "name": "scrobblr",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    // Only the built app is published, never the source folder.
+    "directory": "./dist",
+    // Unknown paths (/settings, /lastfm/callback, /t/<token>) get index.html
+    // so the app's own router can handle them.
+    "not_found_handling": "single-page-application"
+  }
+}

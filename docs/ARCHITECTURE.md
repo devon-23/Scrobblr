@@ -5,7 +5,7 @@
 ```
 iPhone ──(background NFC read of https URL)──► Safari / Home Screen web app
                                                   │
-                         Cloudflare Pages: web/ (Vite + React + TypeScript)
+                         Cloudflare Workers:  web/ (Vite + React + TypeScript, static)
                                                   │ supabase-js
                                     Supabase: Postgres + RLS + Auth
                                               Edge Functions (Last.fm signing)
@@ -101,7 +101,7 @@ Function secrets and a table the browser cannot read.
 - `web/.env.local` (gitignored) — copy from `web/.env.example`.
   `VITE_*` values are compiled into the public bundle, so only public values go
   there (Supabase URL + publishable/anon key, which is safe because RLS protects data).
-- Cloudflare Pages → project settings → environment variables: same `VITE_*` values.
+- Cloudflare Worker → Settings → Build → build variables: same `VITE_*` values (baked in at build time).
 - Supabase Edge Function secrets *(Phase 4)*: set with `supabase secrets set`, never in git.
 
 ## Auth model

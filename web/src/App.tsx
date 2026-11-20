@@ -79,7 +79,7 @@ function ConfigError({ problems }: { problems: string[] }) {
           </ul>
           <p className="small muted">
             Locally: copy <code>web/.env.example</code> to <code>web/.env.local</code> and restart <code>npm run dev</code>. On
-            Cloudflare Pages: set the variables in project settings and redeploy.
+            Cloudflare: set them as build variables (Settings → Build) and redeploy.
           </p>
         </div>
       </section>

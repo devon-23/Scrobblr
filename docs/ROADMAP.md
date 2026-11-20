@@ -15,7 +15,7 @@ after it passes on a real device.
 
 ## Phase 1 — Architecture & project setup
 
-- [x] Decide platform: web app (Cloudflare Pages) + Supabase, not native iOS
+- [x] Decide platform: web app (Cloudflare Workers static assets) + Supabase, not native iOS
 - [x] Repo layout, `.gitignore`, env examples
 - [x] Vite + React + TypeScript app in `web/`
 - [x] Supabase email/password sign-in (single user, public sign-ups disabled)
@@ -23,7 +23,7 @@ after it passes on a real device.
 - [x] Home Screen manifest + icons
 - [ ] Supabase project: user created, sign-ups disabled
 - [ ] Sign in works locally (`npm run dev`)
-- [ ] Deployed to Cloudflare Pages, env vars set
+- [ ] Deployed to Cloudflare (Worker `scrobblr`, workers.dev), build vars set, `/settings` loads (not 404)
 - [ ] Opened on iPhone 16, added to Home Screen, signed in
 
 ## Phase 2 — Physical music library
@@ -110,7 +110,7 @@ writing URLs with NFC Tools · real-tag testing.
 ## Phase 7 — Field testing
 
 ## Open decisions
-- **Domain written on tags** (needed before Phase 5): `*.pages.dev` subdomain or a custom domain.
+- **Domain written on tags** (needed before Phase 5): the `*.workers.dev` URL or a custom domain.
 - **Behaviour defaults** (needed before Phase 3): phone-asleep policy, when to scrobble,
   multi-disc prompts, scanning another album mid-session, starting mid-album.
 - ~~MusicBrainz contact~~ — not needed: browsers can't set User-Agent and MusicBrainz accepts browser requests.

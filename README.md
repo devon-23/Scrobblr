@@ -3,12 +3,12 @@
 Scrobble vinyl records and CDs to Last.fm. Tap an NFC sticker on the sleeve, press
 **Start Listening**, and the app follows the tracklist and scrobbles for you.
 
-A personal web app: **Cloudflare Pages** (front end) + **Supabase** (database, auth,
+A personal web app: **Cloudflare Workers** (static front end) + **Supabase** (database, auth,
 server functions). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
 [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ```
-web/        Vite + React + TypeScript app (deployed to Cloudflare Pages)
+web/        Vite + React + TypeScript app (deployed to Cloudflare Workers, see web/wrangler.jsonc)
 supabase/   Supabase CLI config, migrations, Edge Functions
 docs/       Architecture and roadmap
 ```
@@ -46,22 +46,27 @@ The project ref is the `xxxx` in `https://xxxx.supabase.co`. `--remote` targets 
 (newer CLI versions default to a local Docker stack, which this project doesn't use). It applies everything in
 `supabase/migrations/` that your project doesn't have yet; run it again whenever a phase adds one.
 
-### 4. Deploy to Cloudflare Pages
+### 4. Deploy to Cloudflare (Workers)
 1. Push this repo to GitHub.
-2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git** → pick the repo.
-3. Build settings:
-   - Project name: `analogscrobbler` (becomes `analogscrobbler.pages.dev` if available)
-   - Framework preset: **None** (or Vite)
+2. Cloudflare dashboard → **Workers & Pages → Create → Import a repository** → pick the repo.
+3. Build settings (on an existing Worker: **Settings → Build**):
+   - Project/Worker name: `scrobblr` (must match `name` in `web/wrangler.jsonc`)
+   - Root directory (path): `web`
    - Build command: `npm run build`
-   - Build output directory: `dist`
-   - Root directory: `web`
-4. Environment variables (Production *and* Preview):
-   `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `NODE_VERSION` = `22`.
-5. Deploy. Pages has no `404.html` here, so it serves `index.html` for every path —
-   that's what lets tag URLs like `/t/<token>` reach the app later.
+   - Deploy command: `npx wrangler deploy`
+4. **Build variables** (Settings → Build → Variables and secrets, *not* the runtime
+   "Variables and Secrets" section): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
+   and `NODE_VERSION` = `22`. Vite bakes these into the bundle at build time, so changing
+   them needs a new build (Deployments → retry, or push a commit).
+5. Deploy. The app is served at `https://scrobblr.<your-account>.workers.dev`.
+   `web/wrangler.jsonc` publishes only `dist/` and serves `index.html` for every unknown
+   path, which lets `/settings`, `/lastfm/callback` and later tag URLs (`/t/<token>`) reach the app.
+
+Check it worked: `https://<your-url>/settings` should load the app (not a 404), and the page
+source should reference `/assets/index-….js`, not `/src/main.tsx`.
 
 ### 5. On your iPhone
-Open the `pages.dev` URL in Safari → Share → **Add to Home Screen**. Launch it from
+Open the `workers.dev` URL in Safari → Share → **Add to Home Screen**. Launch it from
 the Home Screen and sign in; the setup screen should say **Running as: Home Screen app**.
 
 ### 6. Last.fm (Phase 4)
@@ -69,7 +74,7 @@ the Home Screen and sign in; the setup screen should say **Running as: Home Scre
    callback URL can be left blank). You get an **API key** and a **shared secret**. Never paste the
    secret into the app, chat, or git.
 2. Put them in `supabase/functions/.env` (gitignored), copying `supabase/functions/.env.example`,
-   and set `ALLOWED_ORIGINS` to where the app runs (e.g. `http://localhost:5173,https://analogscrobbler.pages.dev`).
+   and set `ALLOWED_ORIGINS` to where the app runs (e.g. `http://localhost:5173,https://scrobblr.<your-account>.workers.dev`).
 3. Upload the secrets, apply the migration, deploy the function:
    ```bash
    supabase secrets set --env-file supabase/functions/.env
