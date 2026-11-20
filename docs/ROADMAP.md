@@ -9,7 +9,7 @@ after it passes on a real device.
 | 2 | Physical music library | 🟡 Built — waiting on your device test |
 | 3 | Listening session engine | 🟡 Built — waiting on your device test |
 | 4 | Last.fm integration | 🟡 Built — waiting on your Last.fm keys + test |
-| 5 | NFC tags | ⬜ Not started |
+| 5 | NFC tags | 🟡 Built — waiting on stickers + your test |
 | 6 | History, statistics, polish | ⬜ Not started |
 | 7 | Field testing & refinement | ⬜ Not started |
 
@@ -102,9 +102,27 @@ Known limits:
   the first real connection is the real test. Unexpected shapes are treated as "retry later".
 
 ## Phase 5 — NFC
-Tag tokens · `/t/<token>` route · unknown/unassigned tags · reassignment ·
-writing URLs with NFC Tools · real-tag testing.
 Tags hold `https://scrobblr.cbark1313.workers.dev/t/<token>` (NTAG213/215, left unlocked while testing).
+
+- [x] Migration `20261119000000_nfc_tags.sql`: `nfc_tags` (random token → copy, owner-only RLS,
+      owner-aware FK, deleting a copy unlinks its tags), `scan_nfc_tag()` looks up + counts a tap
+- [x] `/t/<token>`: linked tag → that copy's Start Listening screen (never auto-starts), or Now
+      Listening if that record is already on; unknown/unlinked tag → "which record is it on?" picker
+- [x] Album page: "tag" link + tag summary per copy; tag page: make link, Copy, try it, unlink,
+      NFC Tools instructions, warning when making links from localhost
+- [x] Tests: 25 SQL checks (isolation, upsert takeover refused, unlinking on delete), token tests,
+      browser run of every flow against a fake backend
+- [ ] `supabase db push --remote` (new migration), push to deploy
+- [ ] Safari on iPhone: sign in once (tags open in Safari, not the Home Screen app)
+- [ ] One copy → tag → Make a tag link → Copy → NFC Tools write → tap → Start Listening opens
+- [ ] Tap it again while that record is playing → Now Listening
+- [ ] A sticker written with a link for a copy you then unlink → tap → picker → link to another copy
+- [ ] Find a sticker spot per format (jacket / inner sleeve / CD tray) that reads first time
+
+Known limits:
+- **Tags open in Safari**, not the Home Screen app (iOS doesn't let Home Screen apps claim links).
+  Safari needs its own sign-in once; sessions sync between the two through the server.
+- **Needs a connection** to look up a tag (same as loading a record).
 
 ## Phase 6 — History, statistics, polish
 

@@ -13,7 +13,7 @@ export class LibraryError extends Error {
 }
 
 /** Turns Supabase/Postgres errors into messages a person can act on. */
-function fail(error: PostgrestError, action: string): never {
+export function fail(error: PostgrestError, action: string): never {
   // supabase-js reports network failures as a PostgrestError whose message is
   // the browser's fetch error ("Failed to fetch" in Chrome, "Load failed" in Safari).
   if (/failed to fetch|load failed|networkerror/i.test(error.message)) {
@@ -64,7 +64,7 @@ export async function listCollection(supabase: SupabaseClient): Promise<Collecti
 export async function getAlbum(supabase: SupabaseClient, id: string): Promise<AlbumWithCopies | null> {
   const { data, error } = await supabase
     .from('albums')
-    .select(`*, physical_copies ( ${TRACKLIST_SELECT} )`)
+    .select(`*, physical_copies ( ${TRACKLIST_SELECT}, nfc_tags ( id, last_scanned_at ) )`)
     .eq('id', id)
     .maybeSingle()
   if (error) fail(error, 'Loading the album')

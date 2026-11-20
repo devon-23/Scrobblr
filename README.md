@@ -84,7 +84,14 @@ the Home Screen and sign in; the setup screen should say **Running as: Home Scre
 4. In the app: Settings → **Connect Last.fm** (in Safari on iPhone). **Dry run is on** by default —
    nothing reaches your profile until you untick it.
 
-## Tests
+### 7. NFC tags (Phase 5)
+1. `supabase db push --remote` (adds the `nfc_tags` table), and push to deploy the app.
+2. Buy NTAG213 or NTAG215 stickers and install **NFC Tools** (free) on your iPhone.
+3. In the app on your phone: an album → **tag** next to a copy → **Make a tag link** → **Copy**.
+4. NFC Tools → Write → Add a record → URL / URI → paste → Write → hold the phone to the sticker.
+   Don't lock the tag while testing.
+5. Tap the sticker with the phone's top edge: Safari opens that record's Start Listening screen.
+
 ```bash
 cd web && npm test                                       # app + engine
 cd supabase/functions && deno test --allow-net=jsr.io    # Last.fm signing + Edge Function

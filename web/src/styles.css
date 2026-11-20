@@ -191,3 +191,11 @@ dl.details dd { margin: 0; overflow-wrap: anywhere; }
 button.big { padding: 8px 14px; font-size: 14px; }
 tr.now-row td { background: #fff3e2 !important; }
 .nav .live { color: #ffe2b8; }
+
+/* NFC tags ------------------------------------------------------------------ */
+.tag-item { border: 1px solid var(--line); padding: 6px; }
+.tag-item.new { border-color: var(--good); }
+.tag-item > * + * { margin-top: 4px; }
+.tag-item input[type='text'] { font-family: 'Courier New', monospace; font-size: 12px; }
+ol.steps { margin: 0; padding-left: 20px; }
+ol.steps li + li { margin-top: 3px; }

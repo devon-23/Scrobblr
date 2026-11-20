@@ -145,6 +145,8 @@ function CopyBox({
             <b>▶ listen</b>
           </Link>
           {' | '}
+          <Link to={`/copy/${copy.id}/tags`}>tag</Link>
+          {' | '}
           <Link to={`/copy/${copy.id}/edit`}>edit</Link>
           {' | '}
           <a href="#" onClick={(e) => (e.preventDefault(), !busy && void remove())}>
@@ -155,9 +157,27 @@ function CopyBox({
     >
       {error && <ErrorBox error={error} />}
       {facts.length > 0 && <p className="muted small">{facts.join(' · ')}</p>}
+      <TagSummary copyId={copy.id} tags={copy.nfc_tags} />
       {copy.notes && <p className="small">{copy.notes}</p>}
       <Tracklist copy={copy} albumArtist={albumArtist} />
     </Box>
+  )
+}
+
+function TagSummary({ copyId, tags }: { copyId: string; tags: CopyWithTracklist['nfc_tags'] }) {
+  if (!tags) return null
+  if (tags.length === 0) {
+    return (
+      <p className="small muted">
+        No NFC tag yet. <Link to={`/copy/${copyId}/tags`}>Set one up</Link>
+      </p>
+    )
+  }
+  const last = tags.map((t) => t.last_scanned_at).filter((x): x is string => !!x).sort().at(-1)
+  return (
+    <p className="small muted">
+      {tags.length === 1 ? 'NFC tag' : `${tags.length} NFC tags`} · {last ? `last tapped ${new Date(last).toLocaleDateString()}` : 'not tapped yet'}
+    </p>
   )
 }
 

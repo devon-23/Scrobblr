@@ -15,6 +15,8 @@ import { ReadyPage } from './features/listening/ReadyPage'
 import { NowListeningPage } from './features/listening/NowListeningPage'
 import { ListeningProvider } from './listening/ListeningProvider'
 import { LastfmCallbackPage } from './features/settings/LastfmCallbackPage'
+import { TagPage } from './features/tags/TagPage'
+import { CopyTagsPage } from './features/tags/CopyTagsPage'
 
 export function App() {
   const result = loadConfig()
@@ -55,6 +57,8 @@ function Routes() {
   if ((params = match('/listen/:copyId', path))) return <ReadyPage key={params.copyId} copyId={params.copyId!} />
   if ((params = match('/album/:id', path))) return <AlbumPage key={params.id} id={params.id!} />
   if ((params = match('/copy/:id/edit', path))) return <EditCopyPage key={params.id} id={params.id!} />
+  if ((params = match('/copy/:id/tags', path))) return <CopyTagsPage key={params.id} copyId={params.id!} />
+  if ((params = match('/t/:token', path))) return <TagPage key={params.token} token={params.token!} />
   return (
     <Box title="Page not found">
       <p>

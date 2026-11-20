@@ -38,6 +38,7 @@ universal links, so tags written now stay valid.
 | `lib/` | Infrastructure: config, Supabase client + context, router, durations |
 | `auth/` | Sign-in state and screen |
 | `library/` | Library types and Supabase data access (`api.ts`) |
+| `nfc/` | Tag tokens/URLs (pure, tested) and `nfc_tags` data access |
 | `integrations/musicbrainz/` | MusicBrainz client + pure mapping to drafts (tested with real fixtures) |
 | `features/` | Screens: collection, album, add, copy editor, listening, settings |
 | `ui/` | Shared layout pieces (page frame, boxes, artwork) |
@@ -95,6 +96,21 @@ app: after each upload / on launch ──► lastfm function "flush"
 
 Server-side secrets (Last.fm API secret, session key) live only in Supabase Edge
 Function secrets and a table the browser cannot read.
+
+## NFC tags (Phase 5)
+
+```
+sticker: https://<app>/t/<token>  ──iPhone background read──► Safari
+/t/<token> ─► scan_nfc_tag(token)  (RLS: owner only; counts the tap)
+   linked   → /listen/<copyId>  (or /listening if that copy is already playing)
+   unknown/unlinked → pick a copy → upsert nfc_tags on token → /listen/<copyId>
+```
+- The token is 22 random base64url characters (128 bits) and carries no meaning; the
+  `nfc_tags` row maps it to a copy, so tags can be moved or replaced without rewriting stickers.
+- `physical_copy_id` uses the owner-aware FK with `on delete set null`, so deleting a copy
+  leaves its stickers reusable instead of breaking them.
+- Signed-out taps hit the sign-in screen and continue to the tag after sign-in; another
+  user's token behaves exactly like an unknown one.
 
 ## Configuration
 

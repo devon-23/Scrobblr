@@ -109,6 +109,8 @@ export interface SideRow {
 
 export interface CopyWithTracklist extends CopyRow {
   copy_sides: SideRow[]
+  /** Only loaded on the album page. */
+  nfc_tags?: { id: string; last_scanned_at: string | null }[]
 }
 
 export interface AlbumWithCopies extends AlbumRow {
