@@ -104,13 +104,15 @@ Known limits:
 ## Phase 5 — NFC
 Tag tokens · `/t/<token>` route · unknown/unassigned tags · reassignment ·
 writing URLs with NFC Tools · real-tag testing.
+Tags hold `https://scrobblr.cbark1313.workers.dev/t/<token>` (NTAG213/215, left unlocked while testing).
 
 ## Phase 6 — History, statistics, polish
 
 ## Phase 7 — Field testing
 
 ## Open decisions
-- **Domain written on tags** (needed before Phase 5): the `*.workers.dev` URL or a custom domain.
+- ~~Domain written on tags~~ — decided 2026-11-19: `https://scrobblr.cbark1313.workers.dev/t/<token>`.
+  Tags can't change once written, so moving to a custom domain later means rewriting every tag.
 - **Behaviour defaults** (needed before Phase 3): phone-asleep policy, when to scrobble,
   multi-disc prompts, scanning another album mid-session, starting mid-album.
 - ~~MusicBrainz contact~~ — not needed: browsers can't set User-Agent and MusicBrainz accepts browser requests.
