@@ -17,6 +17,7 @@ import { LastfmCallbackPage } from './features/settings/LastfmCallbackPage'
 import { TagPage } from './features/tags/TagPage'
 import { CopyTagsPage } from './features/tags/CopyTagsPage'
 import { HomePage } from './features/home/HomePage'
+import { ImportPage } from './features/import/ImportPage'
 import { HistoryPage } from './features/history/HistoryPage'
 import { StatsPage } from './features/stats/StatsPage'
 
@@ -51,7 +52,8 @@ function Routes() {
   if (path === '/collection') return <CollectionPage />
   if (path === '/history') return <HistoryPage />
   if (path === '/stats') return <StatsPage />
-  if (path === '/add') return <AddPage />
+  if (path === '/add') return <AddPage key={window.location.search} />
+  if (path === '/import') return <ImportPage />
   if (path === '/settings') return <SettingsPage />
   if (path === '/listening') return <NowListeningPage />
   if (path === '/lastfm/callback') return <LastfmCallbackPage />

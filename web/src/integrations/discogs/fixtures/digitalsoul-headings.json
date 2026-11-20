@@ -1,0 +1,75 @@
+{
+ "id": 25,
+ "title": "Digitalsoul (Session Two)",
+ "year": 2000,
+ "country": "US",
+ "artists": [
+  {
+   "name": "Kerri Chandler",
+   "anv": "",
+   "join": ""
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "qty": "1",
+   "descriptions": [
+    "12\"",
+    "33 ⅓ RPM",
+    "Limited Edition"
+   ]
+  }
+ ],
+ "labels": [
+  {
+   "name": "Large Records",
+   "catno": "LAR-053"
+  }
+ ],
+ "identifiers": [
+  {
+   "type": "Barcode",
+   "value": "7 52743 00531 5"
+  }
+ ],
+ "tracklist": [
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "This Side",
+   "duration": ""
+  },
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "Summer Love",
+   "duration": "7:30"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "I Found You (Flashback)",
+   "duration": "7:32"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "That Side",
+   "duration": ""
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Isis",
+   "duration": "7:54"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "What Is Digitalsoul?",
+   "duration": "8:06"
+  }
+ ],
+ "master_id": 903113
+}

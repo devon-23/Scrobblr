@@ -1,0 +1,53 @@
+{
+ "id": 7,
+ "title": "Moonchildren EP",
+ "year": 2000,
+ "country": "US",
+ "artists": [
+  {
+   "name": "Moonchildren",
+   "anv": "",
+   "join": ""
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "qty": "1",
+   "descriptions": [
+    "12\"",
+    "33 ⅓ RPM",
+    "EP"
+   ],
+   "text": "Clear"
+  }
+ ],
+ "labels": [
+  {
+   "name": "Deep4Life",
+   "catno": "D4L12002"
+  }
+ ],
+ "identifiers": [],
+ "tracklist": [
+  {
+   "position": "A",
+   "type_": "track",
+   "title": "Ran Away",
+   "duration": "6:45"
+  },
+  {
+   "position": "AA1",
+   "type_": "track",
+   "title": "Silent Crying",
+   "duration": "6:28"
+  },
+  {
+   "position": "AA2",
+   "type_": "track",
+   "title": "No Other",
+   "duration": "5:18"
+  }
+ ],
+ "master_id": 267770
+}

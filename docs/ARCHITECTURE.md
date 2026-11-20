@@ -128,6 +128,19 @@ sticker: https://<app>/t/<token>  ──iPhone background read──► Safari
 - Chart colours: vinyl `#d9711c`, CD `#3f6fc0` (checked for colour-blind separation and contrast);
   every chart also has labels or a table, so colour is never the only cue.
 
+## Discogs import
+
+```
+public collection (api.discogs.com, 25/min) → rows (vinyl/CD only)
+  → MusicBrainz url lookup: discogs.com/release/<id> → MB release (25 per request)
+  → else Discogs release → MB barcode search (one hit with the same format)
+  → else Discogs tracklist → draft (complete → ready, else needs a look)
+ready → save_physical_copy (album matched by release group, else title+artist) → discogs_imports
+```
+- `integrations/discogs/`: client (queue, errors), pure mapping (tested on real releases).
+- `features/import/useDiscogsImport.ts`: orchestration; progress in localStorage, imported and
+  skipped items in `discogs_imports`, so re-running never duplicates.
+
 ## Configuration
 
 - `web/.env.local` (gitignored) — copy from `web/.env.example`.

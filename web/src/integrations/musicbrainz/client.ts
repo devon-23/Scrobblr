@@ -40,9 +40,9 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return run
 }
 
-async function getJson<T>(path: string, params: Record<string, string>): Promise<T> {
+async function getJson<T>(path: string, params: Record<string, string | string[]>): Promise<T> {
   const url = new URL(BASE + path)
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
+  for (const [k, v] of Object.entries(params)) for (const one of [v].flat()) url.searchParams.append(k, one)
   url.searchParams.set('fmt', 'json')
 
   let lastError: MusicBrainzError | null = null
@@ -112,4 +112,41 @@ export async function getRelease(releaseId: string): Promise<MbRelease> {
   return getJson<MbRelease>(`/release/${encodeURIComponent(releaseId)}`, {
     inc: 'recordings+artist-credits+labels+release-groups',
   })
+}
+
+/**
+ * MusicBrainz releases linked to Discogs releases (via MB's own URL relations),
+ * in batches. Returns Discogs release id → MusicBrainz release id for the ones
+ * MusicBrainz knows; unknown ids are simply missing from the map.
+ */
+export async function lookupDiscogsReleases(discogsIds: number[], batchSize = 25): Promise<Map<number, string>> {
+  const found = new Map<number, string>()
+  for (let i = 0; i < discogsIds.length; i += batchSize) {
+    const batch = discogsIds.slice(i, i + batchSize)
+    let data: { urls?: { resource: string; relations?: { release?: { id: string } }[] }[]; resource?: string; relations?: { release?: { id: string } }[] }
+    try {
+      data = await getJson('/url', { resource: batch.map(discogsReleaseUrl), inc: 'release-rels' })
+    } catch (e) {
+      if (e instanceof MusicBrainzError && e.status === 404) continue // none of this batch is known
+      throw e
+    }
+    // One resource comes back as a bare url object; several as { urls: [...] }.
+    const urls = data.urls ?? (data.resource ? [{ resource: data.resource, relations: data.relations }] : [])
+    for (const u of urls) {
+      const id = Number(/\/release\/(\d+)/.exec(u.resource)?.[1])
+      const mbid = u.relations?.find((r) => r.release?.id)?.release?.id
+      if (id && mbid && !found.has(id)) found.set(id, mbid)
+    }
+  }
+  return found
+}
+
+export const discogsReleaseUrl = (id: number) => `https://www.discogs.com/release/${id}`
+
+/** Releases with this barcode (UPC/EAN), with their media. */
+export async function searchReleasesByBarcode(barcode: string): Promise<MbRelease[]> {
+  const digits = barcode.replace(/\D/g, '')
+  if (digits.length < 8) return []
+  const data = await getJson<{ releases: MbRelease[] }>('/release', { query: `barcode:${digits}`, limit: '10' })
+  return data.releases ?? []
 }

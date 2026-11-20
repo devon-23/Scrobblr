@@ -1,0 +1,69 @@
+{
+ "id": 1,
+ "title": "Stockholm",
+ "year": 1999,
+ "country": "Sweden",
+ "artists": [
+  {
+   "name": "The Persuader",
+   "anv": "",
+   "join": ""
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "qty": "2",
+   "descriptions": [
+    "12\"",
+    "33 ⅓ RPM"
+   ]
+  }
+ ],
+ "labels": [
+  {
+   "name": "Svek",
+   "catno": "SK032"
+  }
+ ],
+ "identifiers": [],
+ "tracklist": [
+  {
+   "position": "A",
+   "type_": "track",
+   "title": "Östermalm",
+   "duration": "4:45"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Vasastaden",
+   "duration": "6:11"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Kungsholmen",
+   "duration": "2:49"
+  },
+  {
+   "position": "C1",
+   "type_": "track",
+   "title": "Södermalm",
+   "duration": "5:38"
+  },
+  {
+   "position": "C2",
+   "type_": "track",
+   "title": "Norrmalm",
+   "duration": "4:52"
+  },
+  {
+   "position": "D",
+   "type_": "track",
+   "title": "Gamla Stan",
+   "duration": "5:16"
+  }
+ ],
+ "master_id": 1660109
+}

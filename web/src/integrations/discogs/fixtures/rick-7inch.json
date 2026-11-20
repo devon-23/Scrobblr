@@ -1,0 +1,53 @@
+{
+ "id": 249504,
+ "title": "Never Gonna Give You Up",
+ "year": 1987,
+ "country": "UK",
+ "artists": [
+  {
+   "name": "Rick Astley",
+   "anv": "",
+   "join": ""
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "qty": "1",
+   "descriptions": [
+    "7\"",
+    "45 RPM",
+    "Single",
+    "Stereo"
+   ],
+   "text": "CBS Pressing"
+  }
+ ],
+ "labels": [
+  {
+   "name": "RCA",
+   "catno": "PB 41447"
+  }
+ ],
+ "identifiers": [
+  {
+   "type": "Barcode",
+   "value": "5012394144777"
+  }
+ ],
+ "tracklist": [
+  {
+   "position": "A",
+   "type_": "track",
+   "title": "Never Gonna Give You Up",
+   "duration": "3:32"
+  },
+  {
+   "position": "B",
+   "type_": "track",
+   "title": "Never Gonna Give You Up (Instrumental)",
+   "duration": "3:30"
+  }
+ ],
+ "master_id": 96559
+}

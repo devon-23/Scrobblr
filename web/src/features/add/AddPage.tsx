@@ -9,6 +9,7 @@ import { Link, navigate, useLocation } from '../../lib/router'
 import { Box, ErrorBox, Loading } from '../../ui/Shell'
 import { Artwork } from '../../ui/Artwork'
 import { CopyEditor } from '../copy/CopyEditor'
+import { AddTabs } from './AddTabs'
 import { blankModel, fromDraft, toDraft, type EditModel } from '../copy/editModel'
 
 type Step =
@@ -26,6 +27,9 @@ export function AddPage() {
   const { query } = useLocation()
   const albumParam = query.get('album')
   const rgParam = query.get('rg')
+  // From the Discogs importer's "search" link.
+  const titleParam = query.get('title') ?? ''
+  const artistParam = query.get('artist') ?? ''
 
   const [existing, setExisting] = useState<AlbumRow | null>(null)
   const [step, setStep] = useState<Step>({ kind: 'search' })
@@ -56,6 +60,7 @@ export function AddPage() {
 
   return (
     <>
+      {!existing && <AddTabs current="search" />}
       {existing && (
         <p>
           Adding another copy of <b>{existing.title}</b>. <Link to={`/album/${existing.id}`}>back to album</Link>
@@ -64,8 +69,8 @@ export function AddPage() {
 
       {step.kind === 'search' && (
         <SearchStep
-          initialAlbum={existing?.title ?? ''}
-          initialArtist={existing?.artist ?? ''}
+          initialAlbum={existing?.title ?? titleParam}
+          initialArtist={existing?.artist ?? artistParam}
           onPick={(group) => setStep({ kind: 'editions', group })}
           onManual={manual}
         />

@@ -1,0 +1,23 @@
+{
+ "id": 4000000,
+ "title": "",
+ "year": 0,
+ "country": null,
+ "artists": [],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "qty": "1",
+   "descriptions": null
+  }
+ ],
+ "labels": [
+  {
+   "name": null,
+   "catno": ""
+  }
+ ],
+ "identifiers": [],
+ "tracklist": [],
+ "master_id": null
+}

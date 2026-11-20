@@ -98,6 +98,13 @@ the Home Screen and sign in; the setup screen should say **Running as: Home Scre
 `supabase db push --remote` (adds `listening_stats()`), then push to deploy. Home, History and
 Stats read your existing plays; nothing to set up.
 
+### 9. Import from Discogs
+`supabase db push --remote` (adds `discogs_imports`), then push to deploy. In the app: **add →
+Import from Discogs**, enter your Discogs username. Your Discogs collection must be **public**
+(discogs.com → Settings → Privacy); no password or token is used. Vinyl and CDs are matched to
+MusicBrainz (exact edition), else Discogs' tracklist; incomplete ones wait for you to review or
+enter by hand. Running it again only offers what's new.
+
 ## Tests
 ```bash
 cd web && npm test                                       # app + engine

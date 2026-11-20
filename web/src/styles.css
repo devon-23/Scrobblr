@@ -231,3 +231,9 @@ details summary { cursor: pointer; color: var(--link); }
 .grid .item .fmt { display: block; margin-top: 1px; font-weight: normal; }
 a.np-card { display: flex; gap: 10px; align-items: flex-start; color: var(--text); text-decoration: none; }
 .np-art { width: 96px; flex: 0 0 96px; }
+
+/* Add / import tabs ------------------------------------------------------------ */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); }
+.tabs > * { padding: 4px 10px; border: 1px solid var(--line); border-bottom: 0; margin-right: -1px; background: var(--sub); font-size: 12px; }
+.tabs > .on { background: var(--panel); font-weight: bold; position: relative; top: 1px; }
+.row-actions { margin-top: 2px; }

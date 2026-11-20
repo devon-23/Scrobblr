@@ -1,0 +1,98 @@
+{
+ "id": 10000000,
+ "title": "ANRMAL",
+ "year": 2020,
+ "country": "Belgium",
+ "artists": [
+  {
+   "name": "Juana Molina",
+   "anv": "",
+   "join": ""
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "qty": "1",
+   "descriptions": [
+    "LP"
+   ],
+   "text": "Red"
+  }
+ ],
+ "labels": [
+  {
+   "name": "Crammed Discs",
+   "catno": "CRAM 302LP"
+  }
+ ],
+ "identifiers": [
+  {
+   "type": "Barcode",
+   "value": "876623008163"
+  }
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "Un Dia Punk",
+   "duration": ""
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "Eras",
+   "duration": ""
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "Estalacticas",
+   "duration": ""
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "Cara De Espejo",
+   "duration": ""
+  },
+  {
+   "position": "A5",
+   "type_": "track",
+   "title": "Lo Decidi Yo",
+   "duration": ""
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Sin Dones",
+   "duration": ""
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Paraguaya",
+   "duration": ""
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "Paraguaya Punk",
+   "duration": ""
+  },
+  {
+   "position": "B4",
+   "type_": "track",
+   "title": "Ay, No Se Ofendan",
+   "duration": ""
+  },
+  {
+   "position": "B5",
+   "type_": "track",
+   "title": "Bicho Auto",
+   "duration": ""
+  }
+ ],
+ "master_id": 1835026
+}

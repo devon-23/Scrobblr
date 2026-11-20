@@ -5,6 +5,7 @@ import { useListening } from '../listening/ListeningProvider'
 const NAV = [
   { to: '/', label: 'home' },
   { to: '/collection', label: 'collection' },
+  { to: '/add', label: 'add' },
   { to: '/history', label: 'history' },
   { to: '/stats', label: 'stats' },
   { to: '/settings', label: 'settings' },
@@ -13,7 +14,8 @@ const NAV = [
 /** Which nav item a path belongs to (album/copy/add pages live under the collection). */
 function section(path: string): string {
   if (path === '/') return '/'
-  if (/^\/(collection|album|copy|add|listen\/)/.test(path)) return '/collection'
+  if (/^\/(add|import)/.test(path)) return '/add'
+  if (/^\/(collection|album|copy|listen\/)/.test(path)) return '/collection'
   return '/' + (path.split('/')[1] ?? '')
 }
 

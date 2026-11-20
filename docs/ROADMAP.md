@@ -146,6 +146,19 @@ Known limits:
 - [ ] Home / History / Stats show your real plays; numbers match what you listened to
 - [ ] History vinyl/CD filter and search on the phone
 
+## Extra — Discogs import (2026-11-20)
+
+- [x] Migration `20261120100000_discogs_imports.sql`: imported/skipped Discogs collection items
+      (per instance, owner-only RLS, owner-aware FK, unlinked if the copy is deleted)
+- [x] Reads a public collection (no token), 25 req/min queue with 429 back-off
+- [x] Matching: MusicBrainz's Discogs link (batched) → MusicBrainz by barcode + format → Discogs
+      tracklist (A1/B2 sides, "1-3" discs, headings skipped, index tracks merged)
+- [x] Import page: ready / needs you / imported / other, "Import N ready", review in the copy
+      editor, enter by hand (pre-filled), search MusicBrainz, skip / un-skip, import another copy
+- [x] Tests: 20 mapping tests on real Discogs releases (incl. one full of nulls), 9 SQL checks,
+      browser run against live Discogs + MusicBrainz (4 of 5 matched exactly)
+- [ ] `supabase db push --remote`, push, make your Discogs collection public, import
+
 ## Phase 7 — Field testing
 
 ## Open decisions
