@@ -92,6 +92,11 @@ the Home Screen and sign in; the setup screen should say **Running as: Home Scre
    Don't lock the tag while testing.
 5. Tap the sticker with the phone's top edge: Safari opens that record's Start Listening screen.
 
+### 8. History and stats (Phase 6)
+`supabase db push --remote` (adds `listening_stats()`), then push to deploy. Home, History and
+Stats read your existing plays; nothing to set up.
+
+## Tests
 ```bash
 cd web && npm test                                       # app + engine
 cd supabase/functions && deno test --allow-net=jsr.io    # Last.fm signing + Edge Function

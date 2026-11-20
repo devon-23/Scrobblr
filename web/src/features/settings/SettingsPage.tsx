@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSupabase } from '../../lib/supabaseContext'
 import { Box } from '../../ui/Shell'
 import { LastfmSettings } from './LastfmSettings'
+import { NfcSettings } from './NfcSettings'
 
 type ServerCheck = { status: 'checking' } | { status: 'ok'; at: Date } | { status: 'failed'; message: string }
 
@@ -51,6 +52,14 @@ export function SettingsPage() {
         </p>
       </Box>
       <LastfmSettings />
+      <NfcSettings />
+      <Box title="Album data">
+        <p className="small">
+          Albums, tracklists and durations come from <a href="https://musicbrainz.org" target="_blank" rel="noreferrer">MusicBrainz</a>;
+          covers from the Cover Art Archive. Nothing is fetched again after you save, so your edits stick: fix a title, side or
+          duration from the album's page (<b>edit</b> next to a copy).
+        </p>
+      </Box>
     </>
   )
 }

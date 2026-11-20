@@ -40,7 +40,8 @@ universal links, so tags written now stay valid.
 | `library/` | Library types and Supabase data access (`api.ts`) |
 | `nfc/` | Tag tokens/URLs (pure, tested) and `nfc_tags` data access |
 | `integrations/musicbrainz/` | MusicBrainz client + pure mapping to drafts (tested with real fixtures) |
-| `features/` | Screens: collection, album, add, copy editor, listening, settings |
+| `features/` | Screens: home, collection, album, add, copy editor, tags, listening, history, stats, settings |
+| `history/` | History queries, `listening_stats()` call, display helpers (tested) |
 | `ui/` | Shared layout pieces (page frame, boxes, artwork) |
 | `engine/` | Pure, UI-free session logic, unit-tested with a fake clock |
 | `listening/` | Session storage, sync, and the React provider (clock, wake lock) |
@@ -111,6 +112,15 @@ sticker: https://<app>/t/<token>  ──iPhone background read──► Safari
   leaves its stickers reusable instead of breaking them.
 - Signed-out taps hit the sign-in screen and continue to the tag after sign-in; another
   user's token behaves exactly like an unknown one.
+
+## History and statistics (Phase 6)
+
+- History reads `session_plays` with its session (format) and scrobble (Last.fm status) embedded.
+- Statistics come from one database function, `listening_stats(p_since, p_tz)`, so the browser
+  never downloads every play. It runs as the caller (RLS), counts plays that meet the scrobble
+  rule whether or not they were sent, and splits months in the caller's time zone.
+- Chart colours: vinyl `#d9711c`, CD `#3f6fc0` (checked for colour-blind separation and contrast);
+  every chart also has labels or a table, so colour is never the only cue.
 
 ## Configuration
 

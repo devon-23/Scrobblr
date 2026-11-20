@@ -8,9 +8,9 @@ after it passes on a real device.
 | 1 | Architecture & project setup | 🟡 Built — waiting on your device test |
 | 2 | Physical music library | 🟡 Built — waiting on your device test |
 | 3 | Listening session engine | 🟡 Built — waiting on your device test |
-| 4 | Last.fm integration | 🟡 Built — waiting on your Last.fm keys + test |
-| 5 | NFC tags | 🟡 Built — waiting on stickers + your test |
-| 6 | History, statistics, polish | ⬜ Not started |
+| 4 | Last.fm integration | ✅ Working — first real scrobbles accepted 2026-11-20 |
+| 5 | NFC tags | 🟡 Built, migration applied — waiting on stickers |
+| 6 | History, statistics, polish | 🟡 Built — waiting on your test |
 | 7 | Field testing & refinement | ⬜ Not started |
 
 ## Phase 1 — Architecture & project setup
@@ -125,6 +125,22 @@ Known limits:
 - **Needs a connection** to look up a tag (same as loading a record).
 
 ## Phase 6 — History, statistics, polish
+
+- [x] Migration `20261120000000_stats.sql`: `listening_stats(p_since, p_tz)` — totals, vinyl vs CD,
+      most played vinyl / CDs, top artists, top songs, by month (local time zone), collection counts.
+      Computed from our own plays (security invoker, RLS); "played" = counts, "scrobbled" = accepted
+- [x] Home: now playing card, recently played albums, recently scrobbled, collection tiles
+- [x] History: every play grouped by session, vinyl/CD filter, counted-only, search (' matches ’),
+      Last.fm status per track with failure/skip reasons inline, paging
+- [x] Stats: period filter, tiles, vinyl/CD split, monthly chart (+ table view), top lists
+- [x] Settings: NFC box (untagged copies → tag it), album data note
+- [x] Polish: nav home | collection | history | stats | settings; long-pause notice (2 h+) with
+      End session; start time shows the date when it wasn't today
+- [x] Tests: 21 SQL checks (formats, case-merged songs, time zones, period, isolation), helper
+      tests, query run read-only against the real database, browser run of every page
+- [ ] `supabase db push --remote` (new migration), push to deploy
+- [ ] Home / History / Stats show your real plays; numbers match what you listened to
+- [ ] History vinyl/CD filter and search on the phone
 
 ## Phase 7 — Field testing
 

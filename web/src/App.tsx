@@ -1,8 +1,7 @@
-import { useEffect } from 'react'
 import { loadConfig, type AppConfig } from './lib/config'
 import { getSupabase } from './lib/supabase'
 import { SupabaseProvider } from './lib/supabaseContext'
-import { match, navigate, useLocation, Link } from './lib/router'
+import { match, useLocation, Link } from './lib/router'
 import { useSession } from './auth/useSession'
 import { SignIn } from './auth/SignIn'
 import { Box, Shell } from './ui/Shell'
@@ -17,6 +16,9 @@ import { ListeningProvider } from './listening/ListeningProvider'
 import { LastfmCallbackPage } from './features/settings/LastfmCallbackPage'
 import { TagPage } from './features/tags/TagPage'
 import { CopyTagsPage } from './features/tags/CopyTagsPage'
+import { HomePage } from './features/home/HomePage'
+import { HistoryPage } from './features/history/HistoryPage'
+import { StatsPage } from './features/stats/StatsPage'
 
 export function App() {
   const result = loadConfig()
@@ -44,12 +46,11 @@ function AuthedApp({ config }: { config: AppConfig }) {
 function Routes() {
   const { path } = useLocation()
 
-  useEffect(() => {
-    if (path === '/') navigate('/collection', { replace: true })
-  }, [path])
-
   let params: Record<string, string> | null
-  if (path === '/' || path === '/collection') return <CollectionPage />
+  if (path === '/') return <HomePage />
+  if (path === '/collection') return <CollectionPage />
+  if (path === '/history') return <HistoryPage />
+  if (path === '/stats') return <StatsPage />
   if (path === '/add') return <AddPage />
   if (path === '/settings') return <SettingsPage />
   if (path === '/listening') return <NowListeningPage />

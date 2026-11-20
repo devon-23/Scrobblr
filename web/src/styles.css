@@ -199,3 +199,35 @@ tr.now-row td { background: #fff3e2 !important; }
 .tag-item input[type='text'] { font-family: 'Courier New', monospace; font-size: 12px; }
 ol.steps { margin: 0; padding-left: 20px; }
 ol.steps li + li { margin-top: 3px; }
+
+/* History & stats ------------------------------------------------------------- */
+:root { --vinyl: #d9711c; --cd: #3f6fc0; }
+tr.dim td { color: var(--muted); }
+.history td.right { width: 1%; }
+.history .detail { font-size: 10px; font-weight: normal; white-space: normal; max-width: 12em; margin-left: auto; }
+.fmt { font-size: 10px; font-weight: bold; text-transform: uppercase; color: var(--text); white-space: nowrap; }
+.fmt::before, .sw { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 3px; vertical-align: 0; }
+.fmt-vinyl::before, .sw.vinyl { background: var(--vinyl); }
+.fmt-cd::before, .sw.cd { background: var(--cd); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+.tile { border: 1px solid var(--line); background: var(--row-alt); padding: 6px 8px; }
+.tile .n { font-size: 18px; font-weight: bold; letter-spacing: -0.5px; white-space: nowrap; }
+.tile .l { font-size: 11px; color: var(--muted); }
+.split { display: flex; gap: 2px; height: 16px; }
+.split .seg, .months .seg { display: block; min-width: 2px; }
+.seg.vinyl { background: var(--vinyl); }
+.seg.cd { background: var(--cd); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.months { position: relative; display: flex; align-items: flex-end; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--line); padding-top: 14px; margin-top: 4px; }
+.months .axis-max { position: absolute; top: 0; left: 0; font-size: 10px; }
+.months .month { flex: 1 0 18px; max-width: 48px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch;
+  background: none; border: 0; padding: 0; cursor: pointer; }
+.months .month:hover, .months .month.on { background: var(--row-alt); }
+.months .stack { display: flex; flex-direction: column; gap: 2px; }
+.months .stack .seg { flex-basis: 0; }
+.months .ml { height: 16px; font-size: 9px; color: var(--muted); line-height: 16px; text-align: center; white-space: nowrap; overflow: visible; }
+details summary { cursor: pointer; color: var(--link); }
+.grid .item { text-decoration: none; color: var(--text); display: block; }
+.grid .item .fmt { display: block; margin-top: 1px; font-weight: normal; }
+a.np-card { display: flex; gap: 10px; align-items: flex-start; color: var(--text); text-decoration: none; }
+.np-art { width: 96px; flex: 0 0 96px; }

@@ -3,10 +3,19 @@ import { Link, useLocation } from '../lib/router'
 import { useListening } from '../listening/ListeningProvider'
 
 const NAV = [
+  { to: '/', label: 'home' },
   { to: '/collection', label: 'collection' },
-  { to: '/add', label: 'add album' },
+  { to: '/history', label: 'history' },
+  { to: '/stats', label: 'stats' },
   { to: '/settings', label: 'settings' },
 ]
+
+/** Which nav item a path belongs to (album/copy/add pages live under the collection). */
+function section(path: string): string {
+  if (path === '/') return '/'
+  if (/^\/(collection|album|copy|add|listen\/)/.test(path)) return '/collection'
+  return '/' + (path.split('/')[1] ?? '')
+}
 
 export function Shell({ children }: { children: ReactNode }) {
   const { path } = useLocation()
@@ -16,7 +25,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <header className="masthead">
         <div>
           <span className="name">
-            <Link to="/collection">AnalogScrobbler</Link>
+            <Link to="/">AnalogScrobbler</Link>
           </span>
           <span className="tag">records &amp; cds, scrobbled</span>
         </div>
@@ -27,7 +36,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
           )}
           {NAV.map((n) => (
-            <Link key={n.to} to={n.to} aria-current={path.startsWith(n.to) ? 'page' : undefined}>
+            <Link key={n.to} to={n.to} aria-current={section(path) === n.to ? 'page' : undefined}>
               {n.label}
             </Link>
           ))}

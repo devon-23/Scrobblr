@@ -8,6 +8,13 @@ import { Artwork } from '../../ui/Artwork'
 import { Box, ErrorBox, Loading } from '../../ui/Shell'
 
 const clock = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+/** Time only for today; weekday/date + time otherwise. */
+const stamp = (ms: number) =>
+  new Date(ms).toDateString() === new Date().toDateString()
+    ? clock(ms)
+    : new Date(ms).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+/** A pause longer than this probably means the record isn't on any more. */
+const LONG_PAUSE_MS = 2 * 60 * 60 * 1000
 const ago = (ms: number) => {
   const m = Math.round(ms / 60_000)
   return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${m % 60} min ago`
@@ -47,6 +54,8 @@ export function NowListeningPage() {
   const curTrack = cur ? program.sides[cur.side]!.tracks[cur.track]! : null
   const nextTrack = cur ? program.sides[cur.side]!.tracks[cur.track + 1] : undefined
   const endSession = () => window.confirm('End this listening session?') && L.act({ type: 'end' })
+  const pausedAt =
+    st.phase === 'paused' ? L.session.events.reduce<number | null>((m, e) => (e.type === 'pause' && (m === null || e.at > m) ? e.at : m), null) : null
 
   return (
     <>
@@ -67,6 +76,13 @@ export function NowListeningPage() {
         </div>
 
         {st.needsConfirmation && <StaleCheck program={program} state={st} />}
+
+        {pausedAt !== null && L.now - pausedAt > LONG_PAUSE_MS && (
+          <div className="notice">
+            Paused since <b>{stamp(pausedAt)}</b>. If this record isn't on any more, end the session; nothing is counted while
+            paused. <button onClick={endSession}>End session</button>
+          </div>
+        )}
 
         {cur && curTrack && !st.needsConfirmation && (
           <div className="now">
@@ -127,7 +143,7 @@ export function NowListeningPage() {
       <Box title="Session">
         <dl className="details small">
           <dt>Started</dt>
-          <dd>{clock(L.session.events.find((e) => e.type === 'start')!.at)}</dd>
+          <dd>{stamp(L.session.events.find((e) => e.type === 'start')!.at)}</dd>
           <dt>Saved</dt>
           <dd><SyncLine sync={L.sync} onRetry={L.retrySync} /></dd>
           <dt>Last.fm</dt>
